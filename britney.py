@@ -239,7 +239,7 @@ class Britney(object):
     """
 
     HINTS_HELPERS = ("easy", "hint", "remove", "block", "block-udeb", "unblock", "unblock-udeb", "approve")
-    HINTS_STANDARD = ("urgent", "age-days") + HINTS_HELPERS
+    HINTS_STANDARD = ("urgent", "age-days", "ignore-cruft") + HINTS_HELPERS
     HINTS_ALL = ("force", "force-hint", "block-all") + HINTS_STANDARD
 
     def __init__(self):
@@ -859,7 +859,7 @@ class Britney(object):
                 elif len(l) == 1:
                     # All current hints require at least one argument
                     self.__log("Malformed hint found in %s: '%s'" % (filename, line), type="W")
-                elif l[0] in ["approve", "block", "block-all", "block-udeb", "unblock", "unblock-udeb", "force", "urgent", "remove"]:
+                elif l[0] in ["approve", "block", "block-all", "block-udeb", "unblock", "unblock-udeb", "force", "urgent", "remove", "ignore-cruft"]:
                     if l[0] == 'approve': l[0] = 'unblock'
                     for package in l[1:]:
                         hints.add_hint('%s %s' % (l[0], package), who)
@@ -1395,6 +1395,7 @@ class Britney(object):
             # to False to block the update; if the architecture where the package is out-of-date is
             # in the `fucked_arches' list, then do not block the update
             if oodbins:
+                ood = True
                 oodtxt = ""
                 for v in oodbins.keys():
                     if oodtxt: oodtxt = oodtxt + "; "
@@ -1402,26 +1403,41 @@ class Britney(object):
                         "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>)" % \
                         (", ".join(sorted(oodbins[v])), urllib.quote(arch), urllib.quote(src), urllib.quote(v), v)
                 if uptodatebins:
-                    text = "old binaries left on <a href=\"http://buildd.debian.org/status/logs.php?" \
-                        "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>: %s" % \
-                        (urllib.quote(arch), urllib.quote(src), urllib.quote(source_u[VERSION]), arch, oodtxt)
+                    # check if there is an `ignore-cruft' hint for this package, which mean we'll pretend the cruft packages don't exist
+                    ignorecruft = [ x for x in self.hints.search('ignore-cruft', package=src) if same_source(source_u[VERSION], x.version) ]
+                    if ignorecruft:
+                        # delete cruft from the list of binaries
+                        for v in oodbins.keys():
+                            for pkg in oodbins[v]:
+                                pkgarch = "%s/%s" % (pkg,arch)
+                                self.sources[suite][src][BINARIES].remove(pkgarch)
+                                del self.binaries[suite][arch][0][pkg]
+                        ood = False
+                        text = "binaries ignored by %s on <a href=\"http://buildd.debian.org/status/logs.php?" \
+                            "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>: %s" % \
+                            (ignorecruft[0].user, urllib.quote(arch), urllib.quote(src), urllib.quote(source_u[VERSION]), arch, oodtxt)
+                    else:
+                        text = "old binaries left on <a href=\"http://buildd.debian.org/status/logs.php?" \
+                            "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>: %s" % \
+                            (urllib.quote(arch), urllib.quote(src), urllib.quote(source_u[VERSION]), arch, oodtxt)
                 else:
                     text = "missing build on <a href=\"http://buildd.debian.org/status/logs.php?" \
                         "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>: %s" % \
                         (urllib.quote(arch), urllib.quote(src), urllib.quote(source_u[VERSION]), arch, oodtxt)
 
-                if arch in self.options.fucked_arches.split():
-                    text = text + " (but %s isn't keeping up, so nevermind)" % (arch)
-                else:
-                    update_candidate = False
-                    excuse.addreason("arch")
-                    excuse.addreason("arch-%s" % arch)
-                    if uptodatebins:
-                        excuse.addreason("cruft-arch")
-                        excuse.addreason("cruft-arch-%s" % arch)
+                if ood:
+                    if arch in self.options.fucked_arches.split():
+                        text = text + " (but %s isn't keeping up, so nevermind)" % (arch)
                     else:
-                        excuse.addreason("build-arch")
-                        excuse.addreason("build-arch-%s" % arch)
+                        update_candidate = False
+                        excuse.addreason("arch")
+                        excuse.addreason("arch-%s" % arch)
+                        if uptodatebins:
+                            excuse.addreason("cruft-arch")
+                            excuse.addreason("cruft-arch-%s" % arch)
+                        else:
+                            excuse.addreason("build-arch")
+                            excuse.addreason("build-arch-%s" % arch)
 
                 if self.date_now != self.dates[src][1]:
                     excuse.addhtml(text)
