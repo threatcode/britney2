@@ -1,0 +1,8 @@
+# In this file you can put hints to convince britney to migrate some
+# packages even though it might break some other packages, such hints
+# look like this:
+# force-hint perl/5.20.0-4
+
+# Easy hints do not break anything but might also fail, they should
+# contain a combination of packages that should migrate together:
+# easy syslog-ng/3.5.6-2 syslog-ng-incubator/0.3.3-2
