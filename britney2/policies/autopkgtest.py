@@ -336,6 +336,13 @@ class AutopkgtestPolicy(BasePolicy):
 
         return valid_version
 
+    def save_pending_json(self):
+        # update the pending tests on-disk cache
+        self.logger.info('Updating pending requested tests in %s' % self.pending_tests_file)
+        with open(self.pending_tests_file + '.new', 'w') as f:
+            json.dump(self.pending_tests, f, indent=2)
+        os.rename(self.pending_tests_file + '.new', self.pending_tests_file)
+
     def save_state(self, britney):
         super().save_state(britney)
 
@@ -349,11 +356,7 @@ class AutopkgtestPolicy(BasePolicy):
                 json.dump(test_results, f, indent=2)
             os.rename(self.results_cache_file + '.new', self.results_cache_file)
 
-        # update the pending tests on-disk cache
-        self.logger.info('Updating pending requested tests in %s', self.pending_tests_file)
-        with open(self.pending_tests_file + '.new', 'w') as f:
-            json.dump(self.pending_tests, f, indent=2)
-        os.rename(self.pending_tests_file + '.new', self.pending_tests_file)
+        self.save_pending_json()
 
     def apply_src_policy_impl(self, tests_info, item, source_data_tdist, source_data_srcdist, excuse):
         # initialize
@@ -973,6 +976,11 @@ class AutopkgtestPolicy(BasePolicy):
             self.amqp_channel.basic_publish(amqp.Message(src + '\n' + params,
                                                          delivery_mode=2),  # persistent
                                             routing_key=qname)
+            # we save pending.json with every request, so that if britney
+            # crashes we don't re-request tests. This is only needed when using
+            # real amqp, as with file-based submission the pending tests are
+            # returned by debci along with the results each run.
+            self.save_pending_json()
         else:
             assert self.amqp_file
             with open(self.amqp_file, 'a') as f:
