@@ -44,3 +44,18 @@ to process them.
 Documentation is handled by sphinx and can be built via::
 
     make html
+
+Known users of britney2
+-----------------------
+
+The following is a table of known public consumers and which features
+they rely on.  It is maintained on a "best-effort"-basis and heavily
+rely on consumers to notify us on changes (e.g. by filing a merge
+request on https://salsa.debian.org/release-team/britney2).
+
+
+  +------------+----------------------------------------------+-----------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------+
+  | Consumer   | code repo                                    | config file                                                           | britney cmd-line                                                                                           |
+  +============+==============================================+=======================================================================+============================================================================================================+
+  | Kali Linux | https://git.kali.org/gitweb/?p=britney2.git  |  https://git.kali.org/gitweb/?p=britney2.git;a=blob_plain;f=kali.conf | `./britney.py -c ... -v <https://git.kali.org/gitweb/?p=britney2.git;a=blob_plain;f=kali-run-britney.sh>`_ |
+  +------------+----------------------------------------------+-----------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------+
