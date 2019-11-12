@@ -966,6 +966,7 @@ class AutopkgtestPolicy(BasePolicy):
             qname = 'debci-huge-%s-%s' % (self.options.series, arch)
         else:
             qname = 'debci-%s-%s' % (self.options.series, arch)
+        params['submit-time'] = time.strftime('%Y-%m-%d %H:%M:%S%z', time.gmtime())
         params = json.dumps(params)
 
         if self.amqp_channel:

@@ -1,4 +1,5 @@
 import apt_pkg
+import json
 import os
 import tempfile
 import unittest
@@ -435,9 +436,14 @@ class TestAutopkgtestPolicy(unittest.TestCase):
     apt_pkg.init()
 
     def read_amqp(self):
+        amqp = []
         with open(self.amqp.replace('file://', ''), 'r+') as f:
-            amqp = f.read()
-        return amqp
+            for line in f:
+                pkg, triggers = line.split(" ", 1)
+                triggers_j = json.loads(triggers)
+                del triggers_j['submit-time']
+                amqp.append("%s %s" % (pkg, json.dumps(triggers_j)))
+        return "\n".join(amqp)
 
     def setUp(self):
         self.amqp = 'file://' + tempfile.NamedTemporaryFile(mode='w', delete=False).name
@@ -478,7 +484,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_pass_to_fail_no_retrigger(self):
         src_name = 'pkg'
@@ -533,7 +539,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_pass_to_new(self):
         src_name = 'pkg'
@@ -548,7 +554,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][1] == 'status/pending'
         assert autopkgtest_policy_info[src_name][ARCH][2] == 'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_fail_to_new(self):
         src_name = 'pkg'
@@ -564,7 +570,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_new(self):
         src_name = 'pkg'
@@ -580,7 +586,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_fail(self):
         src_name = 'pkg'
@@ -598,7 +604,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_fail_pending_retest(self):
         src_name = 'pkg'
@@ -632,7 +638,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0 broken/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0 broken/2.0"]}'
 
     def test_remember_old_test_result(self):
         src_name = 'broken'
@@ -646,7 +652,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'PASS'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:inter {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:inter {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_fail_to_fail(self):
         src_name = 'pkg'
