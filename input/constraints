@@ -1,0 +1,65 @@
+Constraint: present-and-installable
+Comment: Manual list of packages that we want to be available
+Fake-Package-Name: debian-packages-that-should-not-go-away
+Package-List:
+ # VMWare support
+ open-vm-tools [amd64 i386]
+ # VirtualBox
+ virtualbox [amd64]
+ virtualbox-guest-dkms [amd64 i386]
+ virtualbox-guest-x11 [amd64 i386]
+ virtualbox-guest-additions-iso [amd64 i386]
+ virtualbox-ext-pack [amd64 i386]
+ # NVidia
+ nvidia-kernel-dkms [amd64]
+ nvidia-driver [amd64]
+
+Constraint: present-and-installable
+Comment: List of Kali meta-packages for extra-safety
+Fake-Package-Name: kali-metapackages-that-must-work
+Package-List:
+ kali-linux-core
+ kali-linux-default
+ kali-linux-light
+ kali-linux-arm
+ kali-linux-nethunter
+ kali-tools-information-gathering
+ kali-tools-vulnerability
+ kali-tools-web
+ kali-tools-database
+ kali-tools-passwords
+ kali-tools-wireless
+ kali-tools-reverse-engineering
+ kali-tools-exploitation
+ kali-tools-social-engineering
+ kali-tools-sniffing-spoofing
+ kali-tools-post-exploitation
+ kali-tools-forensics
+ kali-tools-reporting
+ kali-tools-gpu
+ kali-tools-hardware
+ kali-tools-crypto-stego
+ kali-tools-fuzzing
+ kali-tools-802-11
+ kali-tools-bluetooth
+ kali-tools-rfid
+ kali-tools-sdr
+ kali-tools-voip
+ kali-tools-windows-resources
+ kali-linux-large
+ kali-linux-everything
+ kali-tools-top10
+ kali-tools-headless
+ kali-desktop-live
+ offsec-awae
+ offsec-pwk
+ kali-desktop-core
+ kali-desktop-e17
+ kali-desktop-gnome
+ kali-desktop-i3
+ kali-desktop-kde
+ kali-desktop-lxde
+ kali-desktop-mate
+ kali-desktop-pantheon
+ kali-desktop-xfce
+ kali-desktop-common
