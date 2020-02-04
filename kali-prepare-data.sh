@@ -14,4 +14,4 @@ touch data/state/piuparts-summary-unstable.json
 mkdir -p data/output
 
 # Fetch autopkgtest results
-wget https://autopkgtest.kali.org/data/status/kali-rolling/amd64/packages.json -O data/state/debci.json
+wget http://autopkgtest.kali.org/data/status/kali-rolling/amd64/packages.json -O data/state/debci.json
