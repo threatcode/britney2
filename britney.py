@@ -498,7 +498,8 @@ class Britney(object):
         if getattr(self.options, 'adt_enable') == 'yes':
             self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
-        self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
+        # Disable for Kali, it's more trouble than worth it
+        # self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
         if getattr(self.options, 'check_buildd', 'no') == 'yes':
