@@ -6,17 +6,22 @@ import os
 import re
 import sys
 
-
+## constants
 SUITE_RE = re.compile(r'.*/debci_(?P<suite>[^.]+)\.')
 ARCH_RE = re.compile(r'.*/debci_submit_(?P<arch>[^.]+)\.json')
 
-def britney2debci(output_dir, debci_file):
-    debci_input = os.path.join(output_dir, debci_file)
+PIN_SUITES = {'unstable': 'experimental',
+              'testing': 'unstable',
+              'stable': 'proposed-updates',
+              'oldstable': 'oldstable-proposed-updates',
+              'kali-rolling': 'kali-dev'}
+
+
+## functions
+def britney2debci(debci_input):
+    output_dir = os.path.dirname(debci_input)
     debci_real = os.path.join(output_dir, 'debci_submit_%s.json')
     nr_of_lines = 5000
-
-    pin_suite = dict(unstable='experimental', testing='unstable', stable='proposed-updates', oldstable='oldstable-proposed-updates')
-    pin_suite.update({'kali-rolling': 'kali-dev'})
 
     with open(debci_input, 'r') as f:
         debci = f.readlines()
@@ -39,7 +44,7 @@ def britney2debci(output_dir, debci_file):
                 debci_out[arch].append({'package': package, 'trigger': triggers})
             else:
                 debci_out[arch].append({'package': package, 'trigger': triggers,
-                                       'pin-packages': [[pin, pin_suite[suite]]]})
+                                       'pin-packages': [[pin, PIN_SUITES[suite]]]})
         else:
             there_is_more = True
             break
@@ -57,18 +62,18 @@ def britney2debci(output_dir, debci_file):
 
 
 def put(infile, key):
-    d = os.path.dirname(infile)
+    directory = os.path.dirname(infile)
 
-    myfile = os.path.join(d, 'debci.amqp')
+    myfile = os.path.join(directory, 'debci.amqp')
 
     suite = SUITE_RE.search(infile).groupdict()['suite']
 
     os.rename(infile, myfile)
 
     while os.stat(myfile).st_size > 0:
-        britney2debci(d, myfile)
+        britney2debci(myfile)
 
-        files = glob.glob("{}/debci_submit_*.json".format(d))
+        files = glob.glob("{}/debci_submit_*.json".format(directory))
         for json_file in files:
             arch = ARCH_RE.search(json_file).groupdict()['arch']
 
