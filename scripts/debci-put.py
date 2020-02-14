@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import glob
+import itertools
 import json
 import os
 import re
@@ -21,16 +21,23 @@ MAX_REQUESTS = 5000
 
 
 ## functions
+def grouper(iterable, n, fillvalue = None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return itertools.zip_longest(*args, fillvalue=fillvalue)
+
 def britney2debci(debci_input):
     with open(debci_input, 'r') as f:
         debci = f.readlines()
 
-    debci_out = dict()
-    line_nr = 0
-    there_is_more = False
-    for line in debci:
-        line_nr += 1
-        if line_nr <= MAX_REQUESTS:
+    for chunk in grouper(debci, MAX_REQUESTS):
+        debci_out = {}
+
+        for line in chunk:
+            if line == None:
+                break
+
             # example:
             # debci-testing-i386:green {"triggers": ["green/2"]}
             (queue, package) = line.split()[0].split(':')
@@ -44,18 +51,10 @@ def britney2debci(debci_input):
             else:
                 debci_out[arch].append({'package': package, 'trigger': triggers,
                                        'pin-packages': [[pin, PIN_SUITES[suite]]]})
-        else:
-            there_is_more = True
-            break
-
-    with open(debci_input, 'w') as f:
-        if there_is_more:
-            f.writelines(debci[MAX_REQUESTS:])
-        else:
-            f.writelines('')
-
-    for arch in debci_out:
-        yield arch, json.dumps(debci_out[arch], separators=(',',':'))
+        for arch in debci_out.keys():
+            print(len(debci_out[arch]))
+            debci_jobs = json.dumps(debci_out[arch], separators=(',',':'))
+            yield arch, debci_jobs
 
 
 def put(infile, key):
@@ -67,18 +66,16 @@ def put(infile, key):
 
     os.rename(infile, myfile)
 
-    while os.stat(myfile).st_size > 0:
-        for arch, debci_jobs in britney2debci(myfile):
-            # Starting in 7.55.0, the --header option can take an argument in
-            # @filename style, which then adds a header for each line in the input
-            # file.
-            cmd = """curl --fail --silent
-                 --header "Auth-Key: {}"
-                 --cacert /etc/ssl/ca-global/ca-certificates.crt
-                 --form tests='{}'
-                 https://ci.debian.net/api/v1/test/{}/{}""".format(key, debci_jobs, suite, arch)
-            print(debci_jobs)
-            print(cmd)
+    for arch, debci_jobs in britney2debci(myfile):
+        # Starting in 7.55.0, the --header option can take an argument in
+        # @filename style, which then adds a header for each line in the input
+        # file.
+        cmd = """curl --fail --silent
+             --header "Auth-Key: {}"
+             --cacert /etc/ssl/ca-global/ca-certificates.crt
+             --form tests='{}'
+             https://ci.debian.net/api/v1/test/{}/{}""".format(key, debci_jobs, suite, arch)
+        # print(cmd)
 
 
 KEY = 'FIXME'
