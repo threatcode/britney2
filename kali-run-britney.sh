@@ -20,3 +20,10 @@ else
 fi
 
 ./britney.py -c kali.conf -v >>$LOGFILE 2>&1
+
+# Push autopkgtest results to debci, reading DEBCI_API_KEY from a .env
+# in the same directory (see comment in kali-prepare-data.sh for
+# details about key generation)
+. $(dirname $(readlink -f $0))/.env
+
+./scripts/debci-put.py ./data/output/debci_*.input >> $LOGFILE 2>&1
