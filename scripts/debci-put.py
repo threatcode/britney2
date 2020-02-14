@@ -16,6 +16,12 @@ PIN_SUITES = {'unstable': 'experimental',
               'oldstable': 'oldstable-proposed-updates',
               'kali-rolling': 'kali-dev'}
 
+TMP_FILE = 'debci.amqp'
+
+DEBCI_URL = 'http://autopkgtest.kali.org'
+
+DEBCI_API_KEY = os.getenv("DEBCI_API_KEY", "")
+
 # in a single query to debci
 MAX_REQUESTS = 5000
 
@@ -27,8 +33,9 @@ def grouper(iterable, n, fillvalue = None):
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
-def britney2debci(debci_input):
-    with open(debci_input, 'r') as f:
+
+def britney2debci(debci_input_file):
+    with open(debci_input_file, 'r') as f:
         debci = f.readlines()
 
     for chunk in grouper(debci, MAX_REQUESTS):
@@ -51,22 +58,20 @@ def britney2debci(debci_input):
             else:
                 debci_out[arch].append({'package': package, 'trigger': triggers,
                                        'pin-packages': [[pin, PIN_SUITES[suite]]]})
+
         for arch in debci_out.keys():
-            print(len(debci_out[arch]))
             debci_jobs = json.dumps(debci_out[arch], separators=(',',':'))
             yield arch, debci_jobs
 
 
 def put(infile, key):
     directory = os.path.dirname(infile)
-
-    myfile = os.path.join(directory, 'debci.amqp')
-
     suite = SUITE_RE.search(infile).groupdict()['suite']
 
-    os.rename(infile, myfile)
+    tmp_file = os.path.join(directory, TMP_FILE)
+    os.rename(infile, tmp_file)
 
-    for arch, debci_jobs in britney2debci(myfile):
+    for arch, debci_jobs in britney2debci(tmp_file):
         # Starting in 7.55.0, the --header option can take an argument in
         # @filename style, which then adds a header for each line in the input
         # file.
@@ -74,11 +79,8 @@ def put(infile, key):
              --header "Auth-Key: {}"
              --cacert /etc/ssl/ca-global/ca-certificates.crt
              --form tests='{}'
-             https://ci.debian.net/api/v1/test/{}/{}""".format(key, debci_jobs, suite, arch)
-        # print(cmd)
-
-
-KEY = 'FIXME'
+             {}/api/v1/test/{}/{}""".format(key, debci_jobs, KALI_DEBCI_URL, suite, arch)
+        print(cmd)
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -89,4 +91,4 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for infile in args:
-        put(infile, KEY)
+        put(infile, DEBCI_API_KEY)
