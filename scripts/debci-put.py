@@ -34,11 +34,8 @@ def grouper(iterable, n, fillvalue = None):
     return itertools.zip_longest(*args, fillvalue=fillvalue)
 
 
-def britney2debci(debci_input_file):
-    with open(debci_input_file, 'r') as f:
-        debci = f.readlines()
-
-    for chunk in grouper(debci, MAX_REQUESTS):
+def britney2debci(debci_input):
+    for chunk in grouper(debci_input, MAX_REQUESTS):
         debci_out = {}
 
         for line in chunk:
@@ -64,24 +61,32 @@ def britney2debci(debci_input_file):
             yield arch, debci_jobs
 
 
-def put(infile, key):
+def submit_jobs(infile, key):
     directory = os.path.dirname(infile)
     suite = SUITE_RE.search(infile).groupdict()['suite']
 
+    # read all requests
     tmp_file = os.path.join(directory, TMP_FILE)
     os.rename(infile, tmp_file)
+    with open(tmp_file, 'r') as f:
+        debci_input = f.readlines()
 
-    for arch, debci_jobs in britney2debci(tmp_file):
-        # Starting in 7.55.0, the --header option can take an argument in
-        # @filename style, which then adds a header for each line in the input
-        # file.
+    for arch, debci_jobs in britney2debci(debci_input):
+        json_file = "/tmp/debci-submit-{}-{}.json".format(suite, arch)
+        with open(json_file, 'w') as f:
+            f.write(debci_jobs)
+
         cmd = """curl --fail --silent
              --header "Auth-Key: {}"
              --cacert /etc/ssl/ca-global/ca-certificates.crt
-             --form tests='{}'
-             {}/api/v1/test/{}/{}""".format(key, debci_jobs, KALI_DEBCI_URL, suite, arch)
+             --form tests=@{}
+             {}/api/v1/test/{}/{}""".format(key, json_file, DEBCI_URL, suite, arch)
         print(cmd)
 
+        os.remove(json_file)
+
+
+## main
 if __name__ == '__main__':
     args = sys.argv[1:]
     if not len(args) >= 1:
@@ -91,4 +96,4 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for infile in args:
-        put(infile, DEBCI_API_KEY)
+        submit_jobs(infile, DEBCI_API_KEY)
