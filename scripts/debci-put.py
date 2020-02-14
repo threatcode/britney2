@@ -16,13 +16,12 @@ PIN_SUITES = {'unstable': 'experimental',
               'oldstable': 'oldstable-proposed-updates',
               'kali-rolling': 'kali-dev'}
 
+# in a single query to debci
+MAX_REQUESTS = 5000
+
 
 ## functions
 def britney2debci(debci_input):
-    output_dir = os.path.dirname(debci_input)
-    debci_real = os.path.join(output_dir, 'debci_submit_%s.json')
-    nr_of_lines = 5000
-
     with open(debci_input, 'r') as f:
         debci = f.readlines()
 
@@ -31,7 +30,7 @@ def britney2debci(debci_input):
     there_is_more = False
     for line in debci:
         line_nr += 1
-        if line_nr <= nr_of_lines:
+        if line_nr <= MAX_REQUESTS:
             # example:
             # debci-testing-i386:green {"triggers": ["green/2"]}
             (queue, package) = line.split()[0].split(':')
@@ -49,16 +48,14 @@ def britney2debci(debci_input):
             there_is_more = True
             break
 
-    for arch in debci_out:
-        with open(debci_real % arch, 'w') as f:
-            # Let's not waste space
-            f.write(json.dumps(debci_out[arch], separators=(',',':')))
-
     with open(debci_input, 'w') as f:
         if there_is_more:
-            f.writelines(debci[nr_of_lines:])
+            f.writelines(debci[MAX_REQUESTS:])
         else:
             f.writelines('')
+
+    for arch in debci_out:
+        yield arch, json.dumps(debci_out[arch], separators=(',',':'))
 
 
 def put(infile, key):
@@ -71,24 +68,17 @@ def put(infile, key):
     os.rename(infile, myfile)
 
     while os.stat(myfile).st_size > 0:
-        britney2debci(myfile)
-
-        files = glob.glob("{}/debci_submit_*.json".format(directory))
-        for json_file in files:
-            arch = ARCH_RE.search(json_file).groupdict()['arch']
-
+        for arch, debci_jobs in britney2debci(myfile):
             # Starting in 7.55.0, the --header option can take an argument in
             # @filename style, which then adds a header for each line in the input
             # file.
             cmd = """curl --fail --silent
                  --header "Auth-Key: {}"
                  --cacert /etc/ssl/ca-global/ca-certificates.crt
-                 --form tests=@{}
-                 https://ci.debian.net/api/v1/test/{}/{}""".format(key, json_file, suite, arch)
-            print(open(json_file).readlines())
+                 --form tests='{}'
+                 https://ci.debian.net/api/v1/test/{}/{}""".format(key, debci_jobs, suite, arch)
+            print(debci_jobs)
             print(cmd)
-            # Make sure we don't submit this multiple times by accident
-            os.remove(json_file)
 
 
 KEY = 'FIXME'
