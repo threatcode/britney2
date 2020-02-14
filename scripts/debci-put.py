@@ -10,6 +10,9 @@ import sys
 SUITE_RE = re.compile(r'.*/debci_(?P<suite>[^.]+)\.')
 ARCH_RE = re.compile(r'.*/debci_submit_(?P<arch>[^.]+)\.json')
 
+# example: debci-testing-i386:green {"triggers": ["green/2" "other/n"]}
+DEBCI_RE = re.compile(r'^(?:[^-]+)-(?P<suite>.+)-(?P<arch>[^-]+):(?P<pkg>[^\s]+) .*triggers": \["(?P<triggers>.+)"\]')
+
 PIN_SUITES = {'unstable': 'experimental',
               'testing': 'unstable',
               'stable': 'proposed-updates',
@@ -42,19 +45,22 @@ def britney2debci(debci_input):
             if line == None:
                 break
 
-            # example:
-            # debci-testing-i386:green {"triggers": ["green/2"]}
-            (queue, package) = line.split()[0].split(':')
-            (_, suite, arch) = re.match(r'([^-]+)-(.+)-([^-]+)', queue).groups()
-            triggers = line.split(' ["')[1].split('"]}')[0]
-            pin = ",".join('src:%s' % t.split('/')[0] for t in triggers.split())
-            if arch not in debci_out:
-                debci_out[arch] = list()
+            m = DEBCI_RE.search(line)
+
+            suite, arch, pkg, triggers = m['suite'], m['arch'], m['pkg'], m['triggers']
+
+            pinned_packages = [t.split('/')[0] for t in triggers.split()]
+            pin = ",".join(['src:{}'.format(p) for p in pinned_packages])
+
             if triggers == 'migration-reference/0':
-                debci_out[arch].append({'package': package, 'trigger': triggers})
+                request = {'package': pkg, 'trigger': triggers}
             else:
-                debci_out[arch].append({'package': package, 'trigger': triggers,
-                                       'pin-packages': [[pin, PIN_SUITES[suite]]]})
+                request = {'package': pkg, 'trigger': triggers,
+                           'pin-packages': [[pin, PIN_SUITES[suite]]]}
+
+            if arch not in debci_out.keys():
+                debci_out[arch] = []
+            debci_out[arch].append(request)
 
         for arch in debci_out.keys():
             debci_jobs = json.dumps(debci_out[arch], separators=(',',':'))
