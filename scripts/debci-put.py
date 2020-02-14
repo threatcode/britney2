@@ -4,6 +4,7 @@ import itertools
 import json
 import os
 import re
+import subprocess
 import sys
 
 ## constants
@@ -82,12 +83,11 @@ def submit_jobs(infile, key):
         with open(json_file, 'w') as f:
             f.write(debci_jobs)
 
-        cmd = """curl --fail --silent
-             --header "Auth-Key: {}"
-             --cacert /etc/ssl/ca-global/ca-certificates.crt
-             --form tests=@{}
-             {}/api/v1/test/{}/{}""".format(key, json_file, DEBCI_URL, suite, arch)
-        print(cmd)
+        # FIXME: if we made python3-requests a requirement on zeus we
+        # wouldn't have to fork to curl
+        cmd_tpl = 'curl --fail --header "Auth-Key: {}" --form tests=@{} {}/api/v1/test/{}/{}'
+        cmd = cmd_tpl.format(key, json_file, DEBCI_URL, suite, arch)
+        subprocess.run(cmd, shell=True, check=True)
 
         os.remove(json_file)
 
