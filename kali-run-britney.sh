@@ -25,5 +25,6 @@ fi
 # in the same directory (see comment in kali-prepare-data.sh for
 # details about key generation)
 . $(dirname $(readlink -f $0))/.env
+export DEBCI_API_KEY
 
 ./scripts/debci-put.py ./data/output/debci_*.input >> $LOGFILE 2>&1
