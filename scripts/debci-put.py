@@ -46,7 +46,7 @@ def britney2debci(debci_input):
             if line == None:
                 break
 
-            m = DEBCI_RE.search(line)
+            m = DEBCI_RE.search(line).groupdict()
 
             suite, arch, pkg, triggers = m['suite'], m['arch'], m['pkg'], m['triggers']
 
