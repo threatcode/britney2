@@ -78,18 +78,24 @@ def submit_jobs(infile, key):
     with open(tmp_file, 'r') as f:
         debci_input = f.readlines()
 
-    for arch, debci_jobs in britney2debci(debci_input):
-        json_file = "/tmp/debci-submit-{}-{}.json".format(suite, arch)
-        with open(json_file, 'w') as f:
-            f.write(debci_jobs)
+    try:
+        for arch, debci_jobs in britney2debci(debci_input):
+            json_file = "/tmp/debci-submit-{}-{}.json".format(suite, arch)
+            with open(json_file, 'w') as f:
+                f.write(debci_jobs)
 
-        # FIXME: if we made python3-requests a requirement on zeus we
-        # wouldn't have to fork to curl
-        cmd_tpl = 'curl --fail --header "Auth-Key: {}" --form tests=@{} {}/api/v1/test/{}/{}'
-        cmd = cmd_tpl.format(key, json_file, DEBCI_URL, suite, arch)
-        subprocess.run(cmd, shell=True, check=True)
+            # FIXME: if we made python3-requests a requirement on zeus we
+            # wouldn't have to fork to curl
+            cmd_tpl = 'curl --fail --header "Auth-Key: {}" --form tests=@{} {}/api/v1/test/{}/{}'
+            cmd = cmd_tpl.format(key, json_file, DEBCI_URL, suite, arch)
+            subprocess.run(cmd, shell=True, check=True)
 
-        os.remove(json_file)
+            os.remove(json_file)
+    except:
+        os.rename(tmp_file, infile)
+    finally:
+        if os.path.isfile(tmp_file):
+            os.remove(tmp_file)
 
 
 ## main
