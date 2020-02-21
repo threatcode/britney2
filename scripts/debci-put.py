@@ -103,4 +103,5 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for infile in args:
-        submit_jobs(infile, DEBCI_API_KEY)
+        if os.path.isfile(infile):
+            submit_jobs(infile, DEBCI_API_KEY)
