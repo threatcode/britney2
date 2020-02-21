@@ -4,7 +4,7 @@ import itertools
 import json
 import os
 import re
-import subprocess
+import requests
 import sys
 
 ## constants
@@ -78,20 +78,15 @@ def submit_jobs(infile, key):
     with open(tmp_file, 'r') as f:
         debci_input = f.readlines()
 
+    headers = {'Auth-Key': key}
+
     try:
         for arch, debci_jobs in britney2debci(debci_input):
-            json_file = "/tmp/debci-submit-{}-{}.json".format(suite, arch)
-            with open(json_file, 'w') as f:
-                f.write(debci_jobs)
-
-            # FIXME: if we made python3-requests a requirement on zeus we
-            # wouldn't have to fork to curl
-            cmd_tpl = 'curl --fail --header "Auth-Key: {}" --form tests=@{} {}/api/v1/test/{}/{}'
-            cmd = cmd_tpl.format(key, json_file, DEBCI_URL, suite, arch)
-            subprocess.run(cmd, shell=True, check=True)
-
-            os.remove(json_file)
-    except:
+            url = '{}/api/v1/test/{}/{}'.format(DEBCI_URL, suite, arch)
+            response = requests.post(url, headers=headers, data={'tests':debci_jobs})
+            response.raise_for_status()
+    except Exception as e:
+        print("An exception occured: {}".format(e), file=sys.stderr)
         os.rename(tmp_file, infile)
     finally:
         if os.path.isfile(tmp_file):
