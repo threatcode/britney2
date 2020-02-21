@@ -86,7 +86,9 @@ def submit_jobs(infile, key):
     try:
         for arch, debci_jobs in britney2debci(debci_input):
             url = '{}/api/v1/test/{}/{}'.format(DEBCI_URL, suite, arch)
-            response = requests.post(url, headers=headers, data={'tests':debci_jobs})
+            data = {'tests': debci_jobs,
+                    'priority': DEBCI_PRIORITY}
+            response = requests.post(url, headers=headers, data=data)
             response.raise_for_status()
     except Exception as e:
         print("An exception occured: {}".format(e), file=sys.stderr)
