@@ -22,7 +22,10 @@ PIN_SUITES = {'unstable': 'experimental',
 
 TMP_FILE = 'debci.amqp'
 
-DEBCI_URL = 'http://autopkgtest.kali.org'
+# FIXME: make the next 2 environment variables or command-line
+# options, to ease testing
+DEBCI_URL = 'https://autopkgtest.kali.org'
+DEBCI_PRIORITY = 10
 
 DEBCI_API_KEY = os.getenv("DEBCI_API_KEY", "")
 

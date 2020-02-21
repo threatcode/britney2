@@ -21,4 +21,4 @@ mkdir -p data/output
 #
 #   debci api setkey britney
 . $(dirname $(readlink -f $0))/.env
-wget --header="Auth-Key: $DEBCI_API_KEY" http://autopkgtest.kali.org/api/v1/test\?since=$(date +%s --date="15 days ago")  -O data/state/debci.json
+wget --header="Auth-Key: $DEBCI_API_KEY" https://autopkgtest.kali.org/api/v1/test\?since=$(date +%s --date="15 days ago")  -O data/state/debci.json
