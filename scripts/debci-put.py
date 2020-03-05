@@ -22,11 +22,9 @@ PIN_SUITES = {'unstable': 'experimental',
 
 TMP_FILE = 'debci.amqp'
 
-# FIXME: make the next 2 environment variables or command-line
-# options, to ease testing
-DEBCI_URL = 'https://autopkgtest.kali.org'
-DEBCI_PRIORITY = 10
-
+DEBCI_URL = os.getenv('DEBCI_URL', 'https://autopkgtest.kali.org')
+DEBCI_PRIORITY = os.getenv('DEBCI_PRIORITY', 10)
+DEBCI_VERIFY = os.getenv('DEBCI_VERIFY', '1') == '1'
 DEBCI_API_KEY = os.getenv("DEBCI_API_KEY", "")
 
 # in a single query to debci
@@ -88,7 +86,8 @@ def submit_jobs(infile, key):
             url = '{}/api/v1/test/{}/{}'.format(DEBCI_URL, suite, arch)
             data = {'tests': debci_jobs,
                     'priority': DEBCI_PRIORITY}
-            response = requests.post(url, headers=headers, data=data)
+            response = requests.post(url, headers=headers, data=data,
+                                     verify=DEBCI_VERIFY)
             response.raise_for_status()
     except Exception as e:
         print("An exception occured: {}".format(e), file=sys.stderr)
