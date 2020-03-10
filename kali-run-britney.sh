@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 LOGFILE=kali-run-britney.log
 
 if [ -e "$LOGFILE" ]; then
