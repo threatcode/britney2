@@ -67,7 +67,7 @@ def britney2debci(debci_input):
 
         for arch in debci_out.keys():
             debci_jobs = json.dumps(debci_out[arch], separators=(',',':'))
-            logging.info('yielding {} jobs for arch {}'.format(len(debci_jobs), arch))
+            logging.info('yielding {} jobs for arch {}'.format(len(debci_out[arch]), arch))
             yield arch, debci_jobs
 
 
