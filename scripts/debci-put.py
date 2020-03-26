@@ -2,6 +2,7 @@
 
 import itertools
 import json
+import logging
 import os
 import re
 import requests
@@ -66,6 +67,7 @@ def britney2debci(debci_input):
 
         for arch in debci_out.keys():
             debci_jobs = json.dumps(debci_out[arch], separators=(',',':'))
+            logging.info('yielding {} jobs for arch {}'.format(len(debci_jobs), arch))
             yield arch, debci_jobs
 
 
@@ -86,11 +88,12 @@ def submit_jobs(infile, key):
             url = '{}/api/v1/test/{}/{}'.format(DEBCI_URL, suite, arch)
             data = {'tests': debci_jobs,
                     'priority': DEBCI_PRIORITY}
+            logging.info('about to post')
             response = requests.post(url, headers=headers, data=data,
                                      verify=DEBCI_VERIFY)
             response.raise_for_status()
     except Exception as e:
-        print("An exception occured: {}".format(e), file=sys.stderr)
+        logging.exception('could not post')
         os.rename(tmp_file, infile)
         sys.exit(1)
     finally:
@@ -100,6 +103,8 @@ def submit_jobs(infile, key):
 
 ## main
 if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s %(filename)s: %(message)s', level=logging.INFO)
+
     args = sys.argv[1:]
     if not len(args) >= 1:
         s = os.path.basename(sys.argv[0])
@@ -109,4 +114,5 @@ if __name__ == '__main__':
 
     for infile in args:
         if os.path.isfile(infile):
+            logging.info('about to work on {}'.format(infile))
             submit_jobs(infile, DEBCI_API_KEY)
