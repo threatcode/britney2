@@ -92,6 +92,7 @@ def submit_jobs(infile, key):
     except Exception as e:
         print("An exception occured: {}".format(e), file=sys.stderr)
         os.rename(tmp_file, infile)
+        sys.exit(1)
     finally:
         if os.path.isfile(tmp_file):
             os.remove(tmp_file)
