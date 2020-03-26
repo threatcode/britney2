@@ -28,7 +28,7 @@ DEBCI_VERIFY = os.getenv('DEBCI_VERIFY', '1') == '1'
 DEBCI_API_KEY = os.getenv("DEBCI_API_KEY", "")
 
 # in a single query to debci
-MAX_REQUESTS = 5000
+MAX_REQUESTS = 500
 
 
 ## functions
