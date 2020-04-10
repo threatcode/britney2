@@ -21,7 +21,7 @@ block glibc
 
 # Or you can ignore usual policies to force a package to be a valid candidate
 # for migration:
-# force firefox-esr/68.2.0
+# force firefox-esr/68.5.0esr-1
 
 # Easy hints do not break anything but might also fail, they should
 # contain a combination of packages that should be able to migrate together:

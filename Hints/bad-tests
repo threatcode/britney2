@@ -1,0 +1,164 @@
+# Synchonized with https://release.debian.org/britney/hints/elbrus on 2020-04-10
+
+#### Blaclisted
+
+# 20200326
+# 954655
+force-badtest apparmor/all
+
+# 20191129
+# blacklisted
+force-badtest auto-multiple-choice/all/arm64
+force-badtest auto-multiple-choice/all/ppc64el
+
+# 20200402
+# 953939
+force-badtest bamtools/all/arm64
+
+# 20191214
+force-badtest cyrus-imapd/all/arm64
+
+# 20200322
+force-badtest debci/all/arm64
+
+# 20190212
+# 921566 blacklisted
+force-badtest deepnano/all
+
+# 20200402
+# 954103
+force-badtest dlm/all/arm64
+force-badtest dlm/all/ppc64el
+
+# 20191214
+force-badtest nftables/all/amd64
+
+# 20191212
+# 946624 blacklisted
+force-badtest python-scipy/all
+
+# 20191212
+# 946625 blacklisted
+force-badtest scipy/all
+
+# 20190905
+# 939058 blacklisted
+force-badtest subnetcalc/all
+
+# 20190715
+# blacklisted
+force-badtest openjdk-11/all
+force-badtest openjdk-13/all
+force-badtest openjdk-14/all
+
+# 20190212
+# 914336 blacklisted
+force-badtest netperfmeter/all
+
+
+#### Fails in migration setup
+
+
+
+#### Flaky
+# Other potentially flaky packages:
+# gitaly tor gnuplot-iostream wacomtablet onioncircuits apt haveged kwidgetsaddons zodb monkeysign fdroidserver postorius schleuder mmdebstrap xpapers link-grammar python-pyepsg (crawling website) dovecot debuerreotype (snapshot) enigmail python-3.8
+# (from glibc 2019-03-01) colord python-crypto timew wcc
+# (from glibc 2019-11-01) boost1.67
+# (from glibc 2020-01-01) pinentry
+# OPU
+# PU arm64
+# glibc (1x time out)
+# limnoria (2019-12-09 retriggered; time out + disk i/o error)
+# baloo-widgets (2019-12-10 retriggered; time out)
+# bluez-qt (2020-02-20 retriggerd; bug failed before)
+# PU ppc64el
+# resource-agents (2020-02-20 retriggered)
+
+# 20200407
+# rabbitmq-server is flaky to install
+force-badtest mcollective/all/arm64
+
+# 20200404
+# 955772 flaky
+force-badtest dask.distributed/all
+
+# 20200329
+# 946104 flaky
+force-badtest rtkit/all
+
+# 20200310
+# flaky
+force-badtest dovecot/all/arm64
+
+# 20200224
+# 952463 flaky
+force-badtest bagel/all/arm64
+
+# 20191015
+# 942404 flaky
+force-badtest discosnp/2.3.0-2
+
+# 20191010
+# 942093 flaky
+force-badtest libdbd-mysql-perl/4.050-2
+
+# 20190822
+# 935413 flaky (also in buster)
+force-badtest ruby2.5/all
+
+# 20190422
+# 927761 flaky
+force-badtest fclib/all
+
+# 20190329
+# 925985 flaky
+force-badtest jsurf-alggeo/all
+
+# 20190327
+# 925879 flaky
+force-badtest reprotest/all
+
+# 20181207
+# 906694 KDE stack & flaky
+force-badtest kwin/all
+
+# 20190126
+# 920546 flaky
+force-badtest dolfin/all
+
+# 20181205
+# 915613 flaky
+force-badtest libksysguard/all
+
+# 20181125
+# 910104 regularly times out, although much less lately
+force-badtest hypre/all
+
+# 20181123
+# 914477 flaky
+force-badtest rspamd/all
+ 
+# 20180724
+# 904452 flaky
+force-badtest pango1.0/all
+
+# 20180709
+# 903374 flaky
+force-badtest tracker/all
+
+# 20180708
+# 903314 flaky
+force-badtest kwayland/all
+
+# 20180702
+# 902850 flaky
+force-badtest plasma-framework/all
+
+# 20180702
+# 902844 flaky
+force-badtest baloo-kf5/all
+
+# 20180430
+# 897236 flaky
+force-badtest yorick/all
