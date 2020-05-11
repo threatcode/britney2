@@ -1086,7 +1086,10 @@ class AutopkgtestPolicy(BasePolicy):
                         else:
                             result = 'ALWAYSFAIL'
                     else:
-                        result = 'REGRESSION'
+                        if self.options.adt_ignore_failure_for_new_tests:
+                            result = 'ALWAYSFAIL'
+                        else:
+                            result = 'REGRESSION'
                 else:
                     result = 'REGRESSION'
 

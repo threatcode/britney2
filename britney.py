@@ -501,6 +501,12 @@ class Britney(object):
         if not hasattr(self.options, 'adt_retry_url_mech'):
             self.options.adt_retry_url_mech = ''
 
+        if not hasattr(self.options, 'adt_ignore_failure_for_new_tests') or \
+                self.options.adt_ignore_failure_for_new_tests == "0":
+            self.options.adt_ignore_failure_for_new_tests = False
+        else:
+            self.options.adt_ignore_failure_for_new_tests = True
+
         self._policy_engine.add_policy(DependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
