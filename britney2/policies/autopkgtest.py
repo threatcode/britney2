@@ -421,6 +421,8 @@ class AutopkgtestPolicy(BasePolicy):
                     (status, run_id, log_url) = arch_results[arch]
                     artifact_url = None
                     retry_url = None
+                    reference_url = None
+                    reference_rety_url = None
                     history_url = None
                     if self.options.adt_ppas:
                         if log_url.endswith('log.gz'):
@@ -440,6 +442,32 @@ class AutopkgtestPolicy(BasePolicy):
                                                             ('trigger', trigger)] +
                                                            [('ppa', p) for p in self.options.adt_ppas])
 
+                        baseline_result = self.result_in_baseline(testsrc, arch)
+                        if baseline_result and baseline_result[0] != Result.NONE:
+                            baseline_run_id = str(baseline_result[2])
+                            if self.options.adt_retry_url_mech == 'run_id' and self.options.adt_baseline == 'reference':
+                                reference_rety_url = self.options.adt_ci_url + 'api/v1/retry/' + baseline_run_id
+
+                            if self.options.adt_swift_url.startswith('file://'):
+                                reference_url = os.path.join(self.options.adt_ci_url,
+                                                             'data',
+                                                             'autopkgtest',
+                                                             self.options.series,
+                                                             arch,
+                                                             srchash(testsrc),
+                                                             testsrc,
+                                                             baseline_run_id,
+                                                             'log.gz')
+                            else:
+                                reference_url = os.path.join(self.options.adt_swift_url,
+                                                             self.swift_container,
+                                                             self.options.series,
+                                                             arch,
+                                                             srchash(testsrc),
+                                                             testsrc,
+                                                             baseline_run_id,
+                                                             'log.gz')
+
                     tests_info.setdefault(testname, {})[arch] = \
                         [status, log_url, history_url, artifact_url, retry_url]
 
@@ -451,6 +479,11 @@ class AutopkgtestPolicy(BasePolicy):
                     message += ': <a href="%s">%s</a>' % (log_url, EXCUSES_LABELS[status])
                     if retry_url:
                         message += ' <a href="%s" style="text-decoration: none;">♻ </a> ' % retry_url
+                    if reference_url:
+                        message += '(<a href="%s">reference</a>' % reference_url
+                        if reference_rety_url:
+                            message += '<a href="%s" style="text-decoration: none;"> ♻</a>' % reference_rety_url
+                        message += ')'
                     if artifact_url:
                         message += ' <a href="%s">[artifacts]</a>' % artifact_url
                     html_archmsg.append(message)
