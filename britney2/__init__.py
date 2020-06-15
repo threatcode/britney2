@@ -9,6 +9,11 @@ class DependencyType(Enum):
     BUILD_DEPENDS = ('Build-Depends(-Arch)', 'build-depends', 'build-dependency')
     BUILD_DEPENDS_INDEP = ('Build-Depends-Indep', 'build-depends-indep', 'build-dependency (indep)')
     BUILT_USING = ('Built-Using', 'built-using', 'built-using')
+    # Pseudo dependency where Breaks/Conflicts effectively become a inverted dependency.  E.g.
+    # p Depends on q plus q/2 breaks p/1 implies that p/2 must migrate before q/2 can migrate
+    # (or they go at the same time).
+    # - can also happen with version ranges
+    IMPLICIT_DEPENDENCY = ('Implicit dependency', 'implicit-dependency', 'implicit-dependency')
 
     def __str__(self):
         return self.value[0]
@@ -101,6 +106,15 @@ class Suite(object):
         :return: An iterable of package ids that are in the suite
         """
         yield from (x for x in pkgs if x in self.all_binaries_in_suite)
+
+    def is_cruft(self, pkg):
+        """Check if the package is cruft in the suite
+
+        :param pkg: BinaryPackage to check
+                    Note that this package is assumed to be in the suite
+        """
+        newest_src_in_suite = self.sources[pkg.source]
+        return pkg.source_version != newest_src_in_suite.version
 
 
 class TargetSuite(Suite):
