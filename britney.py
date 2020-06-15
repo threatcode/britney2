@@ -200,9 +200,17 @@ from britney2.installability.builder import build_installability_tester
 from britney2.installability.solver import InstallabilitySolver
 from britney2.migration import MigrationManager
 from britney2.migrationitem import MigrationItemFactory
-from britney2.policies.policy import (AgePolicy, RCBugPolicy, PiupartsPolicy, DependsPolicy,
-                                      BuildDependsPolicy, PolicyEngine,
-                                      BlockPolicy, BuiltUsingPolicy, BuiltOnBuilddPolicy)
+from britney2.policies.policy import (AgePolicy,
+                                      RCBugPolicy,
+                                      PiupartsPolicy,
+                                      DependsPolicy,
+                                      BuildDependsPolicy,
+                                      PolicyEngine,
+                                      BlockPolicy,
+                                      BuiltUsingPolicy,
+                                      BuiltOnBuilddPolicy,
+                                      ImplicitDependencyPolicy,
+                                      )
 from britney2.policies.autopkgtest import AutopkgtestPolicy
 from britney2.utils import (log_and_format_old_libraries,
                             read_nuninst, write_nuninst, write_heidi,
@@ -331,7 +339,8 @@ class Britney(object):
         self._migration_item_factory = MigrationItemFactory(self.suite_info)
         self._hint_parser = HintParser(self._migration_item_factory)
         self._migration_manager = MigrationManager(self.options, self.suite_info, self.all_binaries, self.pkg_universe,
-                                                   self.constraints, self.allow_uninst, self._migration_item_factory)
+                                                   self.constraints, self.allow_uninst, self._migration_item_factory,
+                                                   self.hints)
 
         if not self.options.nuninst_cache:
             self.logger.info("Building the list of non-installable packages for the full archive")
@@ -492,6 +501,12 @@ class Britney(object):
         if not hasattr(self.options, 'adt_retry_url_mech'):
             self.options.adt_retry_url_mech = ''
 
+        if not hasattr(self.options, 'adt_ignore_failure_for_new_tests') or \
+                self.options.adt_ignore_failure_for_new_tests == "0":
+            self.options.adt_ignore_failure_for_new_tests = False
+        else:
+            self.options.adt_ignore_failure_for_new_tests = True
+
         self._policy_engine.add_policy(DependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
@@ -502,6 +517,7 @@ class Britney(object):
         # self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
+        self._policy_engine.add_policy(ImplicitDependencyPolicy(self.options, self.suite_info))
         if getattr(self.options, 'check_buildd', 'no') == 'yes':
             self._policy_engine.add_policy(BuiltOnBuilddPolicy(self.options, self.suite_info))
 

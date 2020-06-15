@@ -134,3 +134,7 @@ ADT_CI_URL        = https://example.com/
 # ADT_REGRESSION_PENALTY empty to have regressions block migration
 ADT_REGRESSION_PENALTY = 10
 ADT_SUCCESS_BOUNTY     = 3
+
+# Enable the migration of packages that are missing in testing, and
+# whose tests fail (disabled by default)
+ADT_MIGRATE_IF_MISSING_IN_TESTING = 0

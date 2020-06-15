@@ -68,8 +68,11 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
     return policy
 
 
-def create_excuse(name):
-    return Excuse(name)
+def create_excuse(name, pkgs):
+    excuse = Excuse(name)
+    for pkg_id in pkgs:
+        excuse.add_package(pkg_id)
+    return excuse
 
 
 def create_source_package(name, version, section='devel', binaries=None):
@@ -100,11 +103,11 @@ def create_bin_package(pkg_id, source_name=None, depends=None, conflicts=None):
         )
 
 
-def create_policy_objects(source_name, target_version='1.0', source_version='2.0'):
+def create_policy_objects(source_name, target_version='1.0', source_version='2.0', pkgs={}):
     return (
         create_source_package(source_name, target_version),
         create_source_package(source_name, source_version),
-        create_excuse(source_name),
+        create_excuse(source_name, pkgs),
     )
 
 
@@ -113,7 +116,7 @@ def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable', ta
     if src_name in suite_info[suite].sources:
         src_u = suite_info[suite].sources[src_name]
         src_t = suite_info.target_suite.sources.get(src_name)
-        _, _, excuse = create_policy_objects(src_name)
+        _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries)
     else:
         src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version)
     suite_info.target_suite.sources[src_name] = src_t
@@ -557,19 +560,17 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         amqp = self.read_amqp()
         assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0 broken/2.0"]}'
 
-    def test_fail_old_test_result(self):
+    def test_remember_old_test_result(self):
         src_name = 'broken'
         policy = initialize_policy(
-            'autopkgtest/fail-old-test-result',
+            'autopkgtest/remember-old-test-result',
             AutopkgtestPolicy,
             adt_amqp=self.amqp,
             pkg_universe=breaks_universe,
             inst_tester=breaks_inst_tester,
             adt_baseline='reference')
-        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'PASS'
-        assert autopkgtest_policy_info['inter'][ARCH][0] == 'RUNNING'
-        assert autopkgtest_policy_info['inter'][ARCH][1] == 'status/pending'
         amqp = self.read_amqp()
         assert amqp[0:-1] == 'debci-testing-amd64:inter {"triggers": ["' + src_name + '/2.0"]}'
 
@@ -580,6 +581,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
             AutopkgtestPolicy,
             adt_amqp=self.amqp,
             adt_retry_older_than=1,
+            adt_baseline='reference',
             pkg_universe=simple_universe,
             inst_tester=simple_inst_tester)
         autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
@@ -590,6 +592,26 @@ class TestAutopkgtestPolicy(unittest.TestCase):
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
         assert len(amqp) == 0
+
+    def test_reference_too_old(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/fail-to-fail',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            adt_reference_max_age=1,
+            pkg_universe=simple_universe,
+            inst_tester=simple_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'ALWAYSFAIL'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert 'migration-reference/0' in amqp
 
 
 if __name__ == '__main__':

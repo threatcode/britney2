@@ -45,12 +45,18 @@ class Result(Enum):
     PASS = 2
     NEUTRAL = 3
     NONE = 4
+    OLD_FAIL = 5
+    OLD_PASS = 6
+    OLD_NEUTRAL = 7
 
 
 EXCUSES_LABELS = {
     "PASS": '<span style="background:#87d96c">Pass</span>',
+    "OLD_PASS": '<span style="background:#87d96c">Pass</span>',
     "NEUTRAL": '<span style="background:#e5c545">No test results</span>',
+    "OLD_NEUTRAL": '<span style="background:#e5c545">No test results</span>',
     "FAIL": '<span style="background:#ff6666">Failed</span>',
+    "OLD_FAIL": '<span style="background:#ff6666">Failed</span>',
     "ALWAYSFAIL": '<span style="background:#e5c545">Not a regression</span>',
     "REGRESSION": '<span style="background:#ff6666">Regression</span>',
     "IGNORE-FAIL": '<span style="background:#e5c545">Ignored failure</span>',
@@ -86,6 +92,18 @@ def all_leaf_results(test_results):
     for trigger in test_results.values():
         for arch in trigger.values():
             yield from arch.values()
+
+
+def mark_result_as_old(result):
+    '''Convert current result into corresponding old result'''
+
+    if result == Result.FAIL:
+        result = Result.OLD_FAIL
+    elif result == Result.PASS:
+        result = Result.OLD_PASS
+    elif result == Result.NEUTRAL:
+        result = Result.OLD_NEUTRAL
+    return result
 
 
 class AutopkgtestPolicy(BasePolicy):
@@ -159,19 +177,18 @@ class AutopkgtestPolicy(BasePolicy):
             # Make adt_baseline optional
             setattr(self.options, 'adt_baseline', None)
 
+        if not hasattr(self.options, 'adt_reference_max_age'):
+            self.options.adt_reference_max_age = float('inf')
+        else:
+            self.options.adt_reference_max_age = \
+              int(self.options.adt_reference_max_age) * SECPERDAY
+
         # read the cached results that we collected so far
         if os.path.exists(self.results_cache_file):
             with open(self.results_cache_file) as f:
                 test_results = json.load(f)
                 self.test_results = self.check_and_upgrade_cache(test_results)
             self.logger.info('Read previous results from %s', self.results_cache_file)
-
-            # The cache can contain results against versions of packages that
-            # are not in any suite anymore. Strip those out, as we don't want
-            # to use those results.
-            if self.options.adt_baseline == 'reference':
-                self.filter_results_for_old_versions()
-
         else:
             self.logger.info('%s does not exist, re-downloading all results from swift', self.results_cache_file)
 
@@ -220,6 +237,13 @@ class AutopkgtestPolicy(BasePolicy):
             else:
                 self.logger.info('%s does not exist, no new data will be processed', debci_file)
 
+        # The cache can contain results against versions of packages that
+        # are not in any suite anymore. Strip those out, as we don't want
+        # to use those results. Additionally, old references may be
+        # filtered out.
+        if self.options.adt_baseline == 'reference':
+            self.filter_old_results()
+
         # we need sources, binaries, and installability tester, so for now
         # remember the whole britney object
         self.britney = britney
@@ -266,23 +290,24 @@ class AutopkgtestPolicy(BasePolicy):
                 result.append(self._now)
         return test_results
 
-    def filter_results_for_old_versions(self):
-        '''Remove results for old versions from the cache'''
+    def filter_old_results(self):
+        '''Remove results for old versions and reference runs from the cache.
+
+        For now, only delete reference runs. If we delete regular
+        results after a while, packages with lots of triggered tests may
+        never have all the results at the same time.
+'''
 
         test_results = self.test_results
-        test_results_new = deepcopy(test_results)
 
         for (trigger, trigger_data) in test_results.items():
             for (src, results) in trigger_data.items():
                 for (arch, result) in results.items():
-                    if not self.test_version_in_any_suite(src, result[1]):
-                        del test_results_new[trigger][src][arch]
-                if len(test_results_new[trigger][src]) == 0:
-                    del test_results_new[trigger][src]
-            if len(test_results_new[trigger]) == 0:
-                del test_results_new[trigger]
-
-        self.test_results = test_results_new
+                    if trigger == REF_TRIG and \
+                      result[3] < self._now - self.options.adt_reference_max_age:
+                        result[0] = mark_result_as_old(result[0])
+                    elif not self.test_version_in_any_suite(src, result[1]):
+                        result[0] = mark_result_as_old(result[0])
 
     def test_version_in_any_suite(self, src, version):
         '''Check if the mentioned version of src is found in a suite
@@ -366,7 +391,7 @@ class AutopkgtestPolicy(BasePolicy):
                     self.logger.info('%s is uninstallable on arch %s, not running autopkgtest there', source_name, arch)
                     excuse.addinfo("uninstallable on arch %s, not running autopkgtest there" % arch)
                 else:
-                    self.request_tests_for_source(item, arch, source_data_srcdist, pkg_arch_result)
+                    self.request_tests_for_source(item, arch, source_data_srcdist, pkg_arch_result, excuse)
 
             # add test result details to Excuse
             cloud_url = self.options.adt_ci_url + "packages/%(h)s/%(s)s/%(r)s/%(a)s"
@@ -396,6 +421,8 @@ class AutopkgtestPolicy(BasePolicy):
                     (status, run_id, log_url) = arch_results[arch]
                     artifact_url = None
                     retry_url = None
+                    reference_url = None
+                    reference_rety_url = None
                     history_url = None
                     if self.options.adt_ppas:
                         if log_url.endswith('log.gz'):
@@ -415,6 +442,32 @@ class AutopkgtestPolicy(BasePolicy):
                                                             ('trigger', trigger)] +
                                                            [('ppa', p) for p in self.options.adt_ppas])
 
+                        baseline_result = self.result_in_baseline(testsrc, arch)
+                        if baseline_result and baseline_result[0] != Result.NONE:
+                            baseline_run_id = str(baseline_result[2])
+                            if self.options.adt_retry_url_mech == 'run_id' and self.options.adt_baseline == 'reference':
+                                reference_rety_url = self.options.adt_ci_url + 'api/v1/retry/' + baseline_run_id
+
+                            if self.options.adt_swift_url.startswith('file://'):
+                                reference_url = os.path.join(self.options.adt_ci_url,
+                                                             'data',
+                                                             'autopkgtest',
+                                                             self.options.series,
+                                                             arch,
+                                                             srchash(testsrc),
+                                                             testsrc,
+                                                             baseline_run_id,
+                                                             'log.gz')
+                            else:
+                                reference_url = os.path.join(self.options.adt_swift_url,
+                                                             self.swift_container,
+                                                             self.options.series,
+                                                             arch,
+                                                             srchash(testsrc),
+                                                             testsrc,
+                                                             baseline_run_id,
+                                                             'log.gz')
+
                     tests_info.setdefault(testname, {})[arch] = \
                         [status, log_url, history_url, artifact_url, retry_url]
 
@@ -426,6 +479,11 @@ class AutopkgtestPolicy(BasePolicy):
                     message += ': <a href="%s">%s</a>' % (log_url, EXCUSES_LABELS[status])
                     if retry_url:
                         message += ' <a href="%s" style="text-decoration: none;">♻ </a> ' % retry_url
+                    if reference_url:
+                        message += '(<a href="%s">reference</a>' % reference_url
+                        if reference_rety_url:
+                            message += '<a href="%s" style="text-decoration: none;"> ♻</a>' % reference_rety_url
+                        message += ')'
                     if artifact_url:
                         message += ' <a href="%s">[artifacts]</a>' % artifact_url
                     html_archmsg.append(message)
@@ -479,15 +537,16 @@ class AutopkgtestPolicy(BasePolicy):
 
         return False
 
-    def request_tests_for_source(self, item, arch, source_data_srcdist, pkg_arch_result):
+    def request_tests_for_source(self, item, arch, source_data_srcdist, pkg_arch_result, excuse):
         pkg_universe = self.britney.pkg_universe
         target_suite = self.suite_info.target_suite
+        source_suite = item.suite
         sources_s = item.suite.sources
         packages_s_a = item.suite.binaries[arch]
         source_name = item.package
         source_version = source_data_srcdist.version
         # request tests (unless they were already requested earlier or have a result)
-        tests = self.tests_for_source(source_name, source_version, arch)
+        tests = self.tests_for_source(source_name, source_version, arch, excuse)
         is_huge = False
         try:
             is_huge = len(tests) > int(self.options.adt_huge)
@@ -532,6 +591,10 @@ class AutopkgtestPolicy(BasePolicy):
             depends = pkg_universe.dependencies_of(binary)
             # depends is a frozenset{frozenset{BinaryPackageId, ..}}
             for deps_of_bin in depends:
+                if target_suite.any_of_these_are_in_the_suite(deps_of_bin):
+                    # if any of the alternative dependencies is already
+                    # satisfied in the target suite, we can just ignore it
+                    continue
                 # We'll figure out which version later
                 bin_new.update(added_pkgs_compared_to_target_suite(deps_of_bin, target_suite))
 
@@ -544,8 +607,17 @@ class AutopkgtestPolicy(BasePolicy):
         for binary in bin_triggers:
             # broken is a frozenset{BinaryPackageId, ..}
             broken = pkg_universe.negative_dependencies_of(binary)
-            # We'll figure out which version later
-            bin_broken.update(added_pkgs_compared_to_target_suite(broken, target_suite, invert=True))
+            broken_in_target = {p.package_name for p in target_suite.which_of_these_are_in_the_suite(broken)}
+            broken_in_source = {p.package_name for p in source_suite.which_of_these_are_in_the_suite(broken)}
+            # We want packages with a newer version in the source suite that
+            # no longer has the conflict. This is an approximation
+            broken_filtered = set(
+                p for p in broken if
+                p.package_name in broken_in_target and
+                p.package_name not in broken_in_source)
+            # We add the version in the target suite, but the code below will
+            # change it to the version in the source suite
+            bin_broken.update(broken_filtered)
         bin_triggers.update(bin_broken)
 
         triggers = set()
@@ -584,7 +656,7 @@ class AutopkgtestPolicy(BasePolicy):
             (result, real_ver, run_id, url) = self.pkg_test_result(testsrc, testver, arch, trigger)
             pkg_arch_result[(testsrc, real_ver)][arch] = (result, run_id, url)
 
-    def tests_for_source(self, src, ver, arch):
+    def tests_for_source(self, src, ver, arch, excuse):
         '''Iterate over all tests that should be run for given source and arch'''
 
         source_suite = self.suite_info.primary_source_suite
@@ -596,29 +668,6 @@ class AutopkgtestPolicy(BasePolicy):
 
         tests = []
 
-        # gcc-N triggers tons of tests via libgcc1, but this is mostly in vain:
-        # gcc already tests itself during build, and it is being used from
-        # -proposed, so holding it back on a dozen unrelated test failures
-        # serves no purpose. Just check some key packages which actually use
-        # gcc during the test, and doxygen as an example for a libgcc user.
-        if src.startswith('gcc-'):
-            if re.match(r'gcc-\d$', src) or src == 'gcc-defaults':
-                # add gcc's own tests, if it has any
-                srcinfo = source_suite.sources[src]
-                if 'autopkgtest' in srcinfo.testsuite:
-                    tests.append((src, ver))
-                for test in ['binutils', 'fglrx-installer', 'doxygen', 'linux']:
-                    try:
-                        tests.append((test, sources_info[test].version))
-                    except KeyError:
-                        # no package in that series? *shrug*, then not (mostly for testing)
-                        pass
-                return tests
-            else:
-                # for other compilers such as gcc-snapshot etc. we don't need
-                # to trigger anything
-                return []
-
         # Debian doesn't have linux-meta, but Ubuntu does
         # for linux themselves we don't want to trigger tests -- these should
         # all come from linux-meta*. A new kernel ABI without a corresponding
@@ -628,8 +677,10 @@ class AutopkgtestPolicy(BasePolicy):
             return []
 
         # we want to test the package itself, if it still has a test in unstable
+        # but only if the package actually exists on this arch
         srcinfo = source_suite.sources[src]
-        if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
+        if ('autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo)) and \
+           len(excuse.packages[arch]) > 0:
             reported_pkgs.add(src)
             tests.append((src, ver))
 
@@ -875,12 +926,6 @@ class AutopkgtestPolicy(BasePolicy):
         if trigsrc == src and apt_pkg.version_compare(ver, trigver) < 0:
             self.logger.debug('test trigger %s, but run for older version %s, ignoring', trigger, ver)
             return
-        if self.options.adt_baseline == 'reference' and \
-           not self.test_version_in_any_suite(src, ver):
-            self.logger.debug(
-                "Ignoring result for source %s and trigger %s as the tested version %s isn't found in any suite",
-                src, trigger, ver)
-            return
 
         result = self.test_results.setdefault(trigger, {}).setdefault(
             src, {}).setdefault(arch, [Result.FAIL, None, '', 0])
@@ -945,10 +990,12 @@ class AutopkgtestPolicy(BasePolicy):
             result_state = result[0]
             version = result[1]
             baseline = self.result_in_baseline(src, arch)
-            if result_state == Result.FAIL and \
-               baseline[0] in {Result.PASS, Result.NEUTRAL} and \
-               self.options.adt_retry_older_than and \
-               result[3] + int(self.options.adt_retry_older_than) * SECPERDAY < self._now:
+            if result_state in {Result.OLD_PASS, Result.OLD_FAIL, Result.OLD_NEUTRAL}:
+                pass
+            elif result_state == Result.FAIL and \
+                    baseline[0] in {Result.PASS, Result.NEUTRAL, Result.OLD_PASS, Result.OLD_NEUTRAL} and \
+                    self.options.adt_retry_older_than and \
+                    result[3] + int(self.options.adt_retry_older_than) * SECPERDAY < self._now:
                 # We might want to retry this failure, so continue
                 pass
             elif not uses_swift:
@@ -1044,7 +1091,7 @@ class AutopkgtestPolicy(BasePolicy):
             ver = r[1]
             run_id = r[2]
 
-            if r[0] == Result.FAIL:
+            if r[0] in {Result.FAIL, Result.OLD_FAIL}:
                 # Special-case triggers from linux-meta*: we cannot compare
                 # results against different kernels, as e. g. a DKMS module
                 # might work against the default kernel but fail against a
@@ -1056,9 +1103,7 @@ class AutopkgtestPolicy(BasePolicy):
 
                 if baseline_result == Result.FAIL:
                     result = 'ALWAYSFAIL'
-                elif self.has_force_badtest(src, ver, arch):
-                    result = 'IGNORE-FAIL'
-                elif baseline_result == Result.NONE:
+                elif baseline_result in {Result.NONE, Result.OLD_FAIL}:
                     # Check if the autopkgtest exists in the target suite and request it
                     test_in_target = False
                     try:
@@ -1069,11 +1114,20 @@ class AutopkgtestPolicy(BasePolicy):
                         pass
                     if test_in_target:
                         self.request_test_if_not_queued(src, arch, REF_TRIG)
-                        result = 'RUNNING-REFERENCE'
+                        if baseline_result == Result.NONE:
+                            result = 'RUNNING-REFERENCE'
+                        else:
+                            result = 'ALWAYSFAIL'
                     else:
-                        result = 'REGRESSION'
+                        if self.options.adt_ignore_failure_for_new_tests:
+                            result = 'ALWAYSFAIL'
+                        else:
+                            result = 'REGRESSION'
                 else:
                     result = 'REGRESSION'
+
+                if self.has_force_badtest(src, ver, arch):
+                    result = 'IGNORE-FAIL'
             else:
                 result = r[0].name
 

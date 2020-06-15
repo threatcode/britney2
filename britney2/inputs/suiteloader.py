@@ -133,6 +133,7 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
         # Intern architectures for efficiency; items in this list will be used for lookups and
         # building items/keys - by intern strings we reduce memory (considerably).
         self._architectures = [sys.intern(arch) for arch in allarches]
+        assert 'all' not in self._architectures, "all not allowed in architectures"
 
     def _get_suite_name(self, suite, release_file):
         for name in ('Suite', 'Codename'):
