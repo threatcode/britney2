@@ -971,7 +971,7 @@ class BuildDependsPolicy(BasePolicy):
             for p in packages:
                 if arch not in self.options.break_arches:
                     spec = DependencySpec(dep_type, arch)
-                    excuse.add_package_depends(spec, {p.pkg_id})
+                    excuse.add_package_depends(spec, {p})
 
         if arch in results:
             if results[arch] == BuildDepResult.FAILED:
@@ -1009,7 +1009,7 @@ class BuildDependsPolicy(BasePolicy):
                           if britney.all_binaries[binary].architecture != 'all'}
 
         excuses_info = defaultdict(list)
-        blockers = defaultdict(list)
+        blockers = defaultdict(set)
         arch_results = {}
         result_archs = defaultdict(list)
         bestresult = BuildDepResult.FAILED
@@ -1060,7 +1060,7 @@ class BuildDependsPolicy(BasePolicy):
                     arch_results[arch] = BuildDepResult.FAILED
                     continue
 
-                blockers[arch] = packages
+                blockers[arch].update(p.pkg_id for p in packages)
                 if arch_results[arch] < BuildDepResult.DEPENDS:
                     arch_results[arch] = BuildDepResult.DEPENDS
 
