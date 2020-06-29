@@ -1510,8 +1510,8 @@ class Britney(object):
 
     def run_auto_hinter(self):
         mi_factory = self._migration_item_factory
-        for l in self.get_auto_hinter_hints(self.upgrade_me):
-            for hint in l:
+        for lst in self.get_auto_hinter_hints(self.upgrade_me):
+            for hint in lst:
                 self.do_hint("easy", "autohinter", sorted(hint))
 
     def nuninst_arch_report(self, nuninst, arch):
