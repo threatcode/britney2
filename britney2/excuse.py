@@ -405,8 +405,8 @@ class Excuse(object):
         res = "<a id=\"%s\" name=\"%s\">%s</a> (%s to %s)\n<ul>\n" % \
             (self.uvname, self.uvname, self.uvname, self.ver[0], self.ver[1])
         info = self._text(excuses)
-        for l in info:
-            res += "<li>%s\n" % l
+        for line in info:
+            res += "<li>%s\n" % line
         res = res + "</ul>\n"
         return res
 
