@@ -35,6 +35,7 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
         del kwargs['inst_tester']
     options = MockObject(
         state_dir=test_dir,
+        distribution='debian',
         verbose=0,
         default_urgency=DEFAULT_URGENCY,
         dry_run=False,
