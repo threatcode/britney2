@@ -13,6 +13,8 @@ Package-List:
  # NVidia
  nvidia-kernel-dkms [amd64]
  nvidia-driver [amd64]
+ # Used by live-build
+ lilo
 
 Constraint: present-and-installable
 Comment: List of Kali meta-packages for extra-safety
