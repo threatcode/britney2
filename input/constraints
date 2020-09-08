@@ -15,6 +15,9 @@ Package-List:
  nvidia-driver [amd64]
  # Used by live-build
  lilo
+ # Used by CI
+ debci
+ autopkgtest
 
 Constraint: present-and-installable
 Comment: List of Kali meta-packages for extra-safety
