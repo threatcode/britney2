@@ -18,6 +18,13 @@ Package-List:
  # Used by CI
  debci
  autopkgtest
+ reprotest
+ patch
+ faketime
+ disorderfs
+ sudo
+ xxd
+ unzip
 
 Constraint: present-and-installable
 Comment: List of Kali meta-packages for extra-safety
