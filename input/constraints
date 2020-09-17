@@ -25,6 +25,11 @@ Package-List:
  sudo
  xxd
  unzip
+ # Used by ARM build-scripts
+ triggerhappy
+ python3-smbus
+ i2c-tools
+ python3-pigpio
 
 Constraint: present-and-installable
 Comment: List of Kali meta-packages for extra-safety
