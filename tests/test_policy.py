@@ -77,10 +77,10 @@ def create_excuse(name, pkgs):
     return excuse
 
 
-def create_source_package(name, version, section='devel', binaries=None):
+def create_source_package(name, version, section='devel', binaries=None, autopkgtest=['autopkgtest']):
     if binaries is None:
         binaries = set()
-    return SourcePackage(name, version, section, binaries, 'Random tester', False, None, None, ['autopkgtest'], [])
+    return SourcePackage(name, version, section, binaries, 'Random tester', False, None, None, autopkgtest, [])
 
 
 def create_bin_package(pkg_id, source_name=None, depends=None, conflicts=None):
@@ -105,22 +105,25 @@ def create_bin_package(pkg_id, source_name=None, depends=None, conflicts=None):
         )
 
 
-def create_policy_objects(source_name, target_version='1.0', source_version='2.0', pkgs={}):
+def create_policy_objects(source_name, target_version='1.0', source_version='2.0', pkgs={}, autopkgtest=['autopkgtest']):
     return (
-        create_source_package(source_name, target_version),
-        create_source_package(source_name, source_version),
+        create_source_package(source_name, target_version, autopkgtest=autopkgtest),
+        create_source_package(source_name, source_version, autopkgtest=autopkgtest),
         create_excuse(source_name, pkgs),
     )
 
 
-def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable', target_version='1.0', source_version='2.0'):
+def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable',
+                     target_version='1.0', source_version='2.0',
+                     autopkgtest=['autopkgtest'], autopkgtest_successful=True):
     suite_info = policy.suite_info
     if src_name in suite_info[suite].sources:
         src_u = suite_info[suite].sources[src_name]
         src_t = suite_info.target_suite.sources.get(src_name)
-        _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries)
+        _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries, autopkgtest=autopkgtest)
     else:
-        src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version)
+        src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version, autopkgtest=autopkgtest)
+    excuse.has_fully_successful_autopkgtest = len(autopkgtest) > 0 and autopkgtest_successful
     suite_info.target_suite.sources[src_name] = src_t
     suite_info[suite].sources[src_name] = src_u
     factory = MigrationItemFactory(suite_info)
@@ -184,6 +187,49 @@ class TestBlockPolicy(unittest.TestCase):
         src_name = 'has-no-block'
         hints = ['block has-block']
         policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_key_no_key(self):
+        src_name = 'is-no-key'
+        hints = ['block-all key']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_key_key(self):
+        src_name = 'is-key'
+        hints = ['block-all key']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_block_all_no_autopkgtest_has_no_autopkgtest(self):
+        src_name = 'has-no-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name, autopkgtest=[])
+
+    def test_block_all_no_autopkgtest_has_no_autopkgtest_hinted(self):
+        src_name = 'has-no-autopkgtest'
+        hints = ['block-all no-autopkgtest', 'unblock has-no-autopkgtest/2.0']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name, autopkgtest=[])
+
+    def test_block_all_no_autopkgtest_has_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_no_autopkgtest_has_neutral_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL,
+                                             src_name, autopkgtest_successful=False)
+
+    def test_block_all_key_and_no_autopkgtest_no_key_has_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all key', 'block-all no-autopkgtest']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
         block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
 
 

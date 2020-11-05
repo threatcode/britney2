@@ -186,6 +186,9 @@ class Excuse(object):
         self.bounty = {}
         self.penalty = {}
 
+        # messenger from AutopkgtestPolicy to BlockPolicy
+        self.has_fully_successful_autopkgtest = False
+
     def sortkey(self):
         if self.daysold is None:
             return (-1, self.uvname)
