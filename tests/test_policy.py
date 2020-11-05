@@ -7,7 +7,8 @@ from britney2 import Suites, Suite, SuiteClass, SourcePackage, BinaryPackageId, 
 from britney2.excuse import Excuse
 from britney2.hints import HintParser
 from britney2.migrationitem import MigrationItemFactory, MigrationItem
-from britney2.policies.policy import AgePolicy, RCBugPolicy, PiupartsPolicy, PolicyVerdict
+from britney2.policies.policy import AgePolicy, BlockPolicy, PiupartsPolicy, \
+    PolicyVerdict, RCBugPolicy
 from britney2.policies.autopkgtest import AutopkgtestPolicy
 
 from . import MockObject, TEST_HINTER, HINTS_ALL, DEFAULT_URGENCY, new_pkg_universe_builder
@@ -57,14 +58,14 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
     hint_parser = HintParser(mi_factory)
     if pkg_universe and inst_tester:
         build_sources_from_universe_and_inst_tester(policy, pkg_universe, inst_tester)
+    policy.register_hints(hint_parser)
+    hint_parser.parse_hints(TEST_HINTER, HINTS_ALL, 'test-%s' % test_name, hints)
+    policy.hints = hint_parser.hints
     policy.initialise(fake_britney)
     if inst_tester:
         policy.britney._inst_tester = inst_tester
     if pkg_universe:
         policy.britney.pkg_universe = pkg_universe
-    policy.register_hints(hint_parser)
-    hint_parser.parse_hints(TEST_HINTER, HINTS_ALL, 'test-%s' % test_name, hints)
-    policy.hints = hint_parser.hints
     return policy
 
 
@@ -157,6 +158,32 @@ def build_sources_from_universe_and_inst_tester(policy, pkg_universe, inst_teste
         suite_info[suite].sources[pkg_name] = src_universe[pkg_id]
         binaries_s.setdefault(ARCH, {}).setdefault(pkg_name, bin_universe[pkg_id])
     suite_info[suite].binaries = binaries_s
+
+
+class TestBlockPolicy(unittest.TestCase):
+
+    def test_block_all(self):
+        src_name = 'has-no-block'
+        hints = ['block-all source']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_no_block(self):
+        src_name = 'has-no-block'
+        policy = initialize_policy('block/none', BlockPolicy)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_has_block(self):
+        src_name = 'has-block'
+        hints = ['block has-block']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_other_has_block(self):
+        src_name = 'has-no-block'
+        hints = ['block has-block']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
 
 
 class TestRCBugsPolicy(unittest.TestCase):
