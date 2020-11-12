@@ -541,6 +541,7 @@ class AutopkgtestPolicy(BasePolicy):
         pkg_universe = self.britney.pkg_universe
         target_suite = self.suite_info.target_suite
         source_suite = item.suite
+        sources_t = target_suite.sources
         sources_s = item.suite.sources
         packages_s_a = item.suite.binaries[arch]
         source_name = item.package
@@ -625,9 +626,15 @@ class AutopkgtestPolicy(BasePolicy):
             if binary.architecture == arch:
                 try:
                     source_of_bin = packages_s_a[binary.package_name].source
-                    triggers.add(
-                        source_of_bin + '/' +
-                        sources_s[source_of_bin].version)
+                    # If the version in the target suite is the same, don't add a trigger.
+                    # Note that we looked up the source package in the source suite.
+                    # If it were a different source package in the target suite, however, then
+                    # we would not have this source package in the same version anyway.
+                    if (sources_t.get(source_of_bin, None) is None or
+                            sources_s[source_of_bin].version != sources_t[source_of_bin].version):
+                        triggers.add(
+                            source_of_bin + '/' +
+                            sources_s[source_of_bin].version)
                 except KeyError:
                     # Apparently the package was removed from
                     # unstable e.g. if packages are replaced
@@ -636,9 +643,12 @@ class AutopkgtestPolicy(BasePolicy):
                 if binary not in source_data_srcdist.binaries:
                     for tdep_src in self.testsuite_triggers.get(binary.package_name, set()):
                         try:
-                            triggers.add(
-                                tdep_src + '/' +
-                                sources_s[tdep_src].version)
+                            # Only add trigger if versions in the target and source suites are different
+                            if (sources_t.get(tdep_src, None) is None or
+                                    sources_s[tdep_src].version != sources_t[tdep_src].version):
+                                triggers.add(
+                                    tdep_src + '/' +
+                                    sources_s[tdep_src].version)
                         except KeyError:
                             # Apparently the source was removed from
                             # unstable (testsuite_triggers are unified
