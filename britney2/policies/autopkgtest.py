@@ -250,7 +250,6 @@ class AutopkgtestPolicy(BasePolicy):
 
         # Initialize AMQP connection
         self.amqp_channel = None
-        self.amqp_file = None
         if self.options.dry_run:
             return
 
@@ -266,7 +265,8 @@ class AutopkgtestPolicy(BasePolicy):
             self.logger.info('Connected to AMQP server')
         elif amqp_url.startswith('file://'):
             # or in Debian and in testing mode, adt_amqp will be a file:// URL
-            self.amqp_file = amqp_url[7:]
+            amqp_file = amqp_url[7:]
+            self.amqp_file_handle = open(amqp_file, 'w', 1)
         else:
             raise RuntimeError('Unknown ADT_AMQP schema %s' % amqp_url.split(':', 1)[0])
 
@@ -982,9 +982,8 @@ class AutopkgtestPolicy(BasePolicy):
             # returned by debci along with the results each run.
             self.save_pending_json()
         else:
-            assert self.amqp_file
-            with open(self.amqp_file, 'a') as f:
-                f.write('%s:%s %s\n' % (qname, src, params))
+            assert self.amqp_file_handle
+            self.amqp_file_handle.write('%s:%s %s\n' % (qname, src, params))
 
     def pkg_test_request(self, src, arch, full_trigger, huge=False):
         '''Request one package test for one particular trigger
