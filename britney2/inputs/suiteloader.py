@@ -178,7 +178,7 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
                                   target_suite.path)
                 self.logger.error("or if the config file contains a non-empty \"ARCHITECTURES\" field")
                 raise MissingRequiredConfigurationError(missing_config_msg % "ARCHITECTURES")
-            self._architectures = sorted(release_file['Architectures'].split())
+            self._architectures = sorted(x for x in release_file['Architectures'].split() if x != 'all')
             self.logger.info("Using architectures listed in Release file: %s", ' '.join(self._architectures))
 
     def _read_sources(self, basedir):
