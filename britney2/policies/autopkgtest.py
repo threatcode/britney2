@@ -250,7 +250,6 @@ class AutopkgtestPolicy(BasePolicy):
 
         # Initialize AMQP connection
         self.amqp_channel = None
-        self.amqp_file = None
         if self.options.dry_run:
             return
 
@@ -266,7 +265,8 @@ class AutopkgtestPolicy(BasePolicy):
             self.logger.info('Connected to AMQP server')
         elif amqp_url.startswith('file://'):
             # or in Debian and in testing mode, adt_amqp will be a file:// URL
-            self.amqp_file = amqp_url[7:]
+            amqp_file = amqp_url[7:]
+            self.amqp_file_handle = open(amqp_file, 'w', 1)
         else:
             raise RuntimeError('Unknown ADT_AMQP schema %s' % amqp_url.split(':', 1)[0])
 
@@ -336,6 +336,13 @@ class AutopkgtestPolicy(BasePolicy):
 
         return valid_version
 
+    def save_pending_json(self):
+        # update the pending tests on-disk cache
+        self.logger.info('Updating pending requested tests in %s' % self.pending_tests_file)
+        with open(self.pending_tests_file + '.new', 'w') as f:
+            json.dump(self.pending_tests, f, indent=2)
+        os.rename(self.pending_tests_file + '.new', self.pending_tests_file)
+
     def save_state(self, britney):
         super().save_state(britney)
 
@@ -349,16 +356,12 @@ class AutopkgtestPolicy(BasePolicy):
                 json.dump(test_results, f, indent=2)
             os.rename(self.results_cache_file + '.new', self.results_cache_file)
 
-        # update the pending tests on-disk cache
-        self.logger.info('Updating pending requested tests in %s', self.pending_tests_file)
-        with open(self.pending_tests_file + '.new', 'w') as f:
-            json.dump(self.pending_tests, f, indent=2)
-        os.rename(self.pending_tests_file + '.new', self.pending_tests_file)
+        self.save_pending_json()
 
     def apply_src_policy_impl(self, tests_info, item, source_data_tdist, source_data_srcdist, excuse):
         # initialize
         verdict = PolicyVerdict.PASS
-        elegible_for_bounty = False
+        all_self_tests_pass = excuse.has_fully_successful_autopkgtest
         source_name = item.package
         results_info = []
 
@@ -387,7 +390,8 @@ class AutopkgtestPolicy(BasePolicy):
                     verdict = PolicyVerdict.REJECTED_TEMPORARILY
                     self.logger.info('%s hasn''t been built on arch %s, delay autopkgtest there', source_name, arch)
                     excuse.add_verdict_info(verdict, "arch:%s not built yet, autopkgtest delayed there" % arch)
-                elif arch in excuse.unsatisfiable_on_archs:
+                elif (arch in excuse.unsatisfiable_on_archs and
+                      arch not in excuse.policy_info['depends'].get('skip_dep_check', [])):
                     self.logger.info('%s is uninstallable on arch %s, not running autopkgtest there', source_name, arch)
                     excuse.addinfo("uninstallable on arch %s, not running autopkgtest there" % arch)
                 else:
@@ -409,7 +413,7 @@ class AutopkgtestPolicy(BasePolicy):
                 # A source package is elegible for the bounty if it has tests
                 # of its own that pass on all tested architectures.
                 if testsrc == source_name and r == {'PASS'}:
-                    elegible_for_bounty = True
+                    all_self_tests_pass = True
 
                 if testver:
                     testname = '%s/%s' % (testsrc, testver)
@@ -504,7 +508,7 @@ class AutopkgtestPolicy(BasePolicy):
             else:
                 excuse.addreason('autopkgtest')
 
-        if self.options.adt_success_bounty and verdict == PolicyVerdict.PASS and elegible_for_bounty:
+        if self.options.adt_success_bounty and verdict == PolicyVerdict.PASS and all_self_tests_pass:
             excuse.add_bounty('autopkgtest', int(self.options.adt_success_bounty))
         if self.options.adt_regression_penalty and \
            verdict in {PolicyVerdict.REJECTED_PERMANENTLY, PolicyVerdict.REJECTED_TEMPORARILY}:
@@ -541,6 +545,7 @@ class AutopkgtestPolicy(BasePolicy):
         pkg_universe = self.britney.pkg_universe
         target_suite = self.suite_info.target_suite
         source_suite = item.suite
+        sources_t = target_suite.sources
         sources_s = item.suite.sources
         packages_s_a = item.suite.binaries[arch]
         source_name = item.package
@@ -625,9 +630,15 @@ class AutopkgtestPolicy(BasePolicy):
             if binary.architecture == arch:
                 try:
                     source_of_bin = packages_s_a[binary.package_name].source
-                    triggers.add(
-                        source_of_bin + '/' +
-                        sources_s[source_of_bin].version)
+                    # If the version in the target suite is the same, don't add a trigger.
+                    # Note that we looked up the source package in the source suite.
+                    # If it were a different source package in the target suite, however, then
+                    # we would not have this source package in the same version anyway.
+                    if (sources_t.get(source_of_bin, None) is None or
+                            sources_s[source_of_bin].version != sources_t[source_of_bin].version):
+                        triggers.add(
+                            source_of_bin + '/' +
+                            sources_s[source_of_bin].version)
                 except KeyError:
                     # Apparently the package was removed from
                     # unstable e.g. if packages are replaced
@@ -636,9 +647,12 @@ class AutopkgtestPolicy(BasePolicy):
                 if binary not in source_data_srcdist.binaries:
                     for tdep_src in self.testsuite_triggers.get(binary.package_name, set()):
                         try:
-                            triggers.add(
-                                tdep_src + '/' +
-                                sources_s[tdep_src].version)
+                            # Only add trigger if versions in the target and source suites are different
+                            if (sources_t.get(tdep_src, None) is None or
+                                    sources_s[tdep_src].version != sources_t[tdep_src].version):
+                                triggers.add(
+                                    tdep_src + '/' +
+                                    sources_s[tdep_src].version)
                         except KeyError:
                             # Apparently the source was removed from
                             # unstable (testsuite_triggers are unified
@@ -646,13 +660,11 @@ class AutopkgtestPolicy(BasePolicy):
                             pass
         trigger = source_name + '/' + source_version
         triggers.discard(trigger)
-        trigger_str = trigger
-        if triggers:
-            # Make the order (minus the "real" trigger) deterministic
-            trigger_str += ' ' + ' '.join(sorted(list(triggers)))
+        triggers_list = sorted(list(triggers))
+        triggers_list.insert(0, trigger)
 
         for (testsrc, testver) in tests:
-            self.pkg_test_request(testsrc, arch, trigger_str, huge=is_huge)
+            self.pkg_test_request(testsrc, arch, triggers_list, huge=is_huge)
             (result, real_ver, run_id, url) = self.pkg_test_result(testsrc, testver, arch, trigger)
             pkg_arch_result[(testsrc, real_ver)][arch] = (result, run_id, url)
 
@@ -939,8 +951,8 @@ class AutopkgtestPolicy(BasePolicy):
             result[2] = run_id
             result[3] = seen
 
-    def send_test_request(self, src, arch, trigger, huge=False):
-        '''Send out AMQP request for testing src/arch for trigger
+    def send_test_request(self, src, arch, triggers, huge=False):
+        '''Send out AMQP request for testing src/arch for triggers
 
         If huge is true, then the request will be put into the -huge instead of
         normal queue.
@@ -948,7 +960,7 @@ class AutopkgtestPolicy(BasePolicy):
         if self.options.dry_run:
             return
 
-        params = {'triggers': [trigger]}
+        params = {'triggers': triggers}
         if self.options.adt_ppas:
             params['ppas'] = self.options.adt_ppas
             qname = 'debci-ppa-%s-%s' % (self.options.series, arch)
@@ -956,21 +968,34 @@ class AutopkgtestPolicy(BasePolicy):
             qname = 'debci-huge-%s-%s' % (self.options.series, arch)
         else:
             qname = 'debci-%s-%s' % (self.options.series, arch)
-        params = json.dumps(params)
+        params['submit-time'] = time.strftime('%Y-%m-%d %H:%M:%S%z', time.gmtime())
 
         if self.amqp_channel:
-            self.amqp_channel.basic_publish(amqp.Message(src + '\n' + params), routing_key=qname)
+            params = json.dumps(params)
+            self.amqp_channel.basic_publish(amqp.Message(src + '\n' + params,
+                                                         delivery_mode=2),  # persistent
+                                            routing_key=qname)
+            # we save pending.json with every request, so that if britney
+            # crashes we don't re-request tests. This is only needed when using
+            # real amqp, as with file-based submission the pending tests are
+            # returned by debci along with the results each run.
+            self.save_pending_json()
         else:
-            assert self.amqp_file
-            with open(self.amqp_file, 'a') as f:
-                f.write('%s:%s %s\n' % (qname, src, params))
+            # for file-based submission, triggers are space separated
+            params['triggers'] = [' '.join(params['triggers'])]
+            params = json.dumps(params)
+            assert self.amqp_file_handle
+            self.amqp_file_handle.write('%s:%s %s\n' % (qname, src, params))
 
-    def pkg_test_request(self, src, arch, full_trigger, huge=False):
-        '''Request one package test for one particular trigger
+    def pkg_test_request(self, src, arch, all_triggers, huge=False):
+        '''Request one package test for a set of triggers
 
-        trigger is "pkgname/version" of the package that triggers the testing
-        of src. If huge is true, then the request will be put into the -huge
-        instead of normal queue.
+        all_triggers is a list of "pkgname/version". These are the packages
+        that will be taken from the source suite. The first package in this
+        list is the package that triggers the testing of src, the rest are
+        additional packages required for installability of the test deps. If
+        huge is true, then the request will be put into the -huge instead of
+        normal queue.
 
         This will only be done if that test wasn't already requested in
         a previous run (i. e. if it's not already in self.pending_tests)
@@ -978,7 +1003,7 @@ class AutopkgtestPolicy(BasePolicy):
         ensures to download current results for this package before
         requesting any test.
 '''
-        trigger = full_trigger.split()[0]
+        trigger = all_triggers[0]
         uses_swift = not self.options.adt_swift_url.startswith('file://')
         try:
             result = self.test_results[trigger][src][arch]
@@ -1016,11 +1041,11 @@ class AutopkgtestPolicy(BasePolicy):
             except KeyError:
                 pass
 
-        self.request_test_if_not_queued(src, arch, trigger, full_trigger, huge=huge)
+        self.request_test_if_not_queued(src, arch, trigger, all_triggers, huge=huge)
 
-    def request_test_if_not_queued(self, src, arch, trigger, full_trigger=None, huge=False):
-        if full_trigger is None:
-            full_trigger = trigger
+    def request_test_if_not_queued(self, src, arch, trigger, all_triggers=[], huge=False):
+        if not all_triggers:
+            all_triggers = [trigger]
 
         # Don't re-request if it's already pending
         arch_list = self.pending_tests.setdefault(trigger, {}).setdefault(src, [])
@@ -1030,7 +1055,7 @@ class AutopkgtestPolicy(BasePolicy):
             self.logger.info('Requesting %s autopkgtest on %s to verify %s', src, arch, trigger)
             arch_list.append(arch)
             arch_list.sort()
-            self.send_test_request(src, arch, full_trigger, huge=huge)
+            self.send_test_request(src, arch, all_triggers, huge=huge)
 
     def result_in_baseline(self, src, arch):
         '''Get the result for src on arch in the baseline

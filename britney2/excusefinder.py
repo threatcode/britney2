@@ -60,7 +60,8 @@ class ExcuseFinder(object):
             excuse.add_verdict_info(
                 excuse.policy_verdict,
                 "Not touching package, as requested by %s "
-                "(contact debian-release if update is needed)" % hint.user)
+                "(contact %s-release if update is needed)" % (hint.user,
+                                                              self.options.distribution))
             excuse.addreason("block")
             self.excuses[excuse.name] = excuse
             return False
@@ -549,7 +550,8 @@ class ExcuseFinder(object):
                 excuse.add_verdict_info(
                     excuse.policy_verdict,
                     "Not removing package, due to block hint by %s "
-                    "(contact debian-release if update is needed)" % blockhint.user)
+                    "(contact %s-release if update is needed)" % (blockhint.user,
+                                                                  self.options.distribution))
                 excuse.addreason("block")
                 blocked = True
 
@@ -581,10 +583,15 @@ class ExcuseFinder(object):
 
         # check that the list of actionable items matches the list of valid
         # excuses
-        assert valid == {x for x in excuses if excuses[x].is_valid}
+        assert_sets_equal(valid, {x for x in excuses if excuses[x].is_valid})
 
         # check that the rdeps for all invalid excuses were invalidated
-        assert invalidated == {x for x in excuses if not excuses[x].is_valid}
+        assert_sets_equal(invalidated, {x for x in excuses if not excuses[x].is_valid})
 
         actionable_items = {x for x in actionable_items if x.name in valid}
         return excuses, actionable_items
+
+
+def assert_sets_equal(a, b):
+    if a != b:
+        raise AssertionError("sets not equal a-b {} b-a {}".format(a-b, b-a))

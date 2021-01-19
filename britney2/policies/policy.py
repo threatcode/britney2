@@ -2,7 +2,9 @@ import json
 import logging
 import os
 import re
+import sys
 import time
+import yaml
 from enum import IntEnum, unique
 from collections import defaultdict
 from urllib.parse import quote
@@ -861,7 +863,9 @@ class DependsPolicy(BasePolicy):
                     # ...but if the binary is allowed to become uninstallable,
                     # we don't care
                     # we still want the binary to be listed as uninstallable,
-                    # so the autopkgtest policy knows not to try to run tests
+                    # let the autopkgtest policy see that we did this so that
+                    # it can run the test anyway
+                    deps_info.setdefault('skip_dep_check', []).append(arch)
                     continue
                 verdict = PolicyVerdict.REJECTED_PERMANENTLY
                 excuse.add_verdict_info(verdict, "%s/%s has unsatisfiable dependency" % (
@@ -1208,6 +1212,33 @@ class BlockPolicy(BasePolicy):
         for hint in self.hints.search(type='block-all'):
             self._blockall[hint.package] = hint
 
+        self._key_packages = []
+        if 'key' in self._blockall:
+            self._key_packages = self._read_key_packages()
+
+    def _read_key_packages(self):
+        """Read the list of key packages
+
+        The file contains data in the yaml format :
+
+        - reason: <something>
+          source: <package>
+
+        The method returns a list of all key packages.
+        """
+        filename = os.path.join(self.state_dir, 'key_packages.yaml')
+        self.logger.info("Loading key packages from %s", filename)
+        if os.path.exists(filename):
+            with open(filename) as f:
+                data = yaml.safe_load(f)
+            key_packages = [item['source'] for item in data]
+        else:
+            self.logger.error("Britney was asked to block key packages, " +
+                              "but no key_packages.yaml file was found.")
+            sys.exit(1)
+
+        return key_packages
+
     def register_hints(self, hint_parser):
         # block related hints are currently defined in hint.py
         pass
@@ -1229,6 +1260,13 @@ class BlockPolicy(BasePolicy):
                     src not in self.suite_info.target_suite.sources:
                 blocked['block'] = self._blockall['new-source'].user
                 excuse.add_hint(self._blockall['new-source'])
+            elif 'key' in self._blockall and src in self._key_packages:
+                blocked['block'] = self._blockall['key'].user
+                excuse.add_hint(self._blockall['key'])
+            elif 'no-autopkgtest' in self._blockall:
+                if not excuse.has_fully_successful_autopkgtest:
+                    blocked['block'] = self._blockall['no-autopkgtest'].user
+                    excuse.add_hint(self._blockall['no-autopkgtest'])
         else:
             blocked['block'] = suite_name
             excuse.needs_approval = True
@@ -1264,7 +1302,7 @@ class BlockPolicy(BasePolicy):
             else:
                 verdict = PolicyVerdict.REJECTED_NEEDS_APPROVAL
                 if is_primary or block_cmd == 'block-udeb':
-                    tooltip = "please contact debian-release if update is needed"
+                    tooltip = "please contact %s-release if update is needed" % self.options.distribution
                     # redirect people to d-i RM for udeb things:
                     if block_cmd == 'block-udeb':
                         tooltip = "please contact the d-i release manager if an update is needed"

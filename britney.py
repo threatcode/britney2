@@ -417,6 +417,8 @@ class Britney(object):
                           help="Do not compute which packages can migrate.")
         parser.add_option("", "--series", action="store", dest="series", default='',
                           help="set distribution series name")
+        parser.add_option("", "--distribution", action="store", dest="distribution", default="debian",
+                          help="set distribution name")
         (self.options, self.args) = parser.parse_args()
 
         if self.options.verbose:
@@ -516,7 +518,8 @@ class Britney(object):
         # Disable for Kali, it's more trouble than worth it
         # self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
+        if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
+            self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(ImplicitDependencyPolicy(self.options, self.suite_info))
         if getattr(self.options, 'check_buildd', 'no') == 'yes':
             self._policy_engine.add_policy(BuiltOnBuilddPolicy(self.options, self.suite_info))

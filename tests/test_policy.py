@@ -1,4 +1,5 @@
 import apt_pkg
+import json
 import os
 import tempfile
 import unittest
@@ -7,7 +8,8 @@ from britney2 import Suites, Suite, SuiteClass, SourcePackage, BinaryPackageId, 
 from britney2.excuse import Excuse
 from britney2.hints import HintParser
 from britney2.migrationitem import MigrationItemFactory, MigrationItem
-from britney2.policies.policy import AgePolicy, RCBugPolicy, PiupartsPolicy, PolicyVerdict
+from britney2.policies.policy import AgePolicy, BlockPolicy, PiupartsPolicy, \
+    PolicyVerdict, RCBugPolicy
 from britney2.policies.autopkgtest import AutopkgtestPolicy
 
 from . import MockObject, TEST_HINTER, HINTS_ALL, DEFAULT_URGENCY, new_pkg_universe_builder
@@ -34,6 +36,7 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
         del kwargs['inst_tester']
     options = MockObject(
         state_dir=test_dir,
+        distribution='debian',
         verbose=0,
         default_urgency=DEFAULT_URGENCY,
         dry_run=False,
@@ -57,14 +60,14 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
     hint_parser = HintParser(mi_factory)
     if pkg_universe and inst_tester:
         build_sources_from_universe_and_inst_tester(policy, pkg_universe, inst_tester)
+    policy.register_hints(hint_parser)
+    hint_parser.parse_hints(TEST_HINTER, HINTS_ALL, 'test-%s' % test_name, hints)
+    policy.hints = hint_parser.hints
     policy.initialise(fake_britney)
     if inst_tester:
         policy.britney._inst_tester = inst_tester
     if pkg_universe:
         policy.britney.pkg_universe = pkg_universe
-    policy.register_hints(hint_parser)
-    hint_parser.parse_hints(TEST_HINTER, HINTS_ALL, 'test-%s' % test_name, hints)
-    policy.hints = hint_parser.hints
     return policy
 
 
@@ -75,10 +78,10 @@ def create_excuse(name, pkgs):
     return excuse
 
 
-def create_source_package(name, version, section='devel', binaries=None):
+def create_source_package(name, version, section='devel', binaries=None, autopkgtest=['autopkgtest']):
     if binaries is None:
         binaries = set()
-    return SourcePackage(name, version, section, binaries, 'Random tester', False, None, None, ['autopkgtest'], [])
+    return SourcePackage(name, version, section, binaries, 'Random tester', False, None, None, autopkgtest, [])
 
 
 def create_bin_package(pkg_id, source_name=None, depends=None, conflicts=None):
@@ -103,22 +106,25 @@ def create_bin_package(pkg_id, source_name=None, depends=None, conflicts=None):
         )
 
 
-def create_policy_objects(source_name, target_version='1.0', source_version='2.0', pkgs={}):
+def create_policy_objects(source_name, target_version='1.0', source_version='2.0', pkgs={}, autopkgtest=['autopkgtest']):
     return (
-        create_source_package(source_name, target_version),
-        create_source_package(source_name, source_version),
+        create_source_package(source_name, target_version, autopkgtest=autopkgtest),
+        create_source_package(source_name, source_version, autopkgtest=autopkgtest),
         create_excuse(source_name, pkgs),
     )
 
 
-def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable', target_version='1.0', source_version='2.0'):
+def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable',
+                     target_version='1.0', source_version='2.0',
+                     autopkgtest=['autopkgtest'], autopkgtest_successful=True):
     suite_info = policy.suite_info
     if src_name in suite_info[suite].sources:
         src_u = suite_info[suite].sources[src_name]
         src_t = suite_info.target_suite.sources.get(src_name)
-        _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries)
+        _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries, autopkgtest=autopkgtest)
     else:
-        src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version)
+        src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version, autopkgtest=autopkgtest)
+    excuse.has_fully_successful_autopkgtest = len(autopkgtest) > 0 and autopkgtest_successful
     suite_info.target_suite.sources[src_name] = src_t
     suite_info[suite].sources[src_name] = src_u
     factory = MigrationItemFactory(suite_info)
@@ -157,6 +163,75 @@ def build_sources_from_universe_and_inst_tester(policy, pkg_universe, inst_teste
         suite_info[suite].sources[pkg_name] = src_universe[pkg_id]
         binaries_s.setdefault(ARCH, {}).setdefault(pkg_name, bin_universe[pkg_id])
     suite_info[suite].binaries = binaries_s
+
+
+class TestBlockPolicy(unittest.TestCase):
+
+    def test_block_all(self):
+        src_name = 'has-no-block'
+        hints = ['block-all source']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_no_block(self):
+        src_name = 'has-no-block'
+        policy = initialize_policy('block/none', BlockPolicy)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_has_block(self):
+        src_name = 'has-block'
+        hints = ['block has-block']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_other_has_block(self):
+        src_name = 'has-no-block'
+        hints = ['block has-block']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_key_no_key(self):
+        src_name = 'is-no-key'
+        hints = ['block-all key']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_key_key(self):
+        src_name = 'is-key'
+        hints = ['block-all key']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name)
+
+    def test_block_all_no_autopkgtest_has_no_autopkgtest(self):
+        src_name = 'has-no-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL, src_name, autopkgtest=[])
+
+    def test_block_all_no_autopkgtest_has_no_autopkgtest_hinted(self):
+        src_name = 'has-no-autopkgtest'
+        hints = ['block-all no-autopkgtest', 'unblock has-no-autopkgtest/2.0']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name, autopkgtest=[])
+
+    def test_block_all_no_autopkgtest_has_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+
+    def test_block_all_no_autopkgtest_has_neutral_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all no-autopkgtest']
+        policy = initialize_policy('block/none', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_NEEDS_APPROVAL,
+                                             src_name, autopkgtest_successful=False)
+
+    def test_block_all_key_and_no_autopkgtest_no_key_has_autopkgtest(self):
+        src_name = 'has-autopkgtest'
+        hints = ['block-all key', 'block-all no-autopkgtest']
+        policy = initialize_policy('block/key_packages', BlockPolicy, hints=hints)
+        block_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
 
 
 class TestRCBugsPolicy(unittest.TestCase):
@@ -361,9 +436,14 @@ class TestAutopkgtestPolicy(unittest.TestCase):
     apt_pkg.init()
 
     def read_amqp(self):
+        amqp = []
         with open(self.amqp.replace('file://', ''), 'r+') as f:
-            amqp = f.read()
-        return amqp
+            for line in f:
+                pkg, triggers = line.split(" ", 1)
+                triggers_j = json.loads(triggers)
+                del triggers_j['submit-time']
+                amqp.append("%s %s" % (pkg, json.dumps(triggers_j)))
+        return "\n".join(amqp)
 
     def setUp(self):
         self.amqp = 'file://' + tempfile.NamedTemporaryFile(mode='w', delete=False).name
@@ -404,7 +484,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_pass_to_fail_no_retrigger(self):
         src_name = 'pkg'
@@ -459,7 +539,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_pass_to_new(self):
         src_name = 'pkg'
@@ -474,7 +554,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][1] == 'status/pending'
         assert autopkgtest_policy_info[src_name][ARCH][2] == 'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_fail_to_new(self):
         src_name = 'pkg'
@@ -490,7 +570,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_new(self):
         src_name = 'pkg'
@@ -506,7 +586,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_fail(self):
         src_name = 'pkg'
@@ -524,7 +604,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_neutral_to_fail_pending_retest(self):
         src_name = 'pkg'
@@ -558,7 +638,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         assert autopkgtest_policy_info[src_name][ARCH][2] == \
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0 broken/2.0"]}'
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0 broken/2.0"]}'
 
     def test_remember_old_test_result(self):
         src_name = 'broken'
@@ -572,7 +652,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
         assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'PASS'
         amqp = self.read_amqp()
-        assert amqp[0:-1] == 'debci-testing-amd64:inter {"triggers": ["' + src_name + '/2.0"]}'
+        assert amqp == 'debci-testing-amd64:inter {"triggers": ["' + src_name + '/2.0"]}'
 
     def test_fail_to_fail(self):
         src_name = 'pkg'

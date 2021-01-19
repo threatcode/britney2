@@ -73,6 +73,12 @@ The `<type>` can be one of:
    already in the target suite.  (Side-effect: Removed packages will
    not re-enter the taget suite automatically).
 
+ * `key`: Block source migrations if the given source is a key package.
+
+ * `no-autopkgtest`: Block source migrations if the given source has no
+   autopkgtest or if the test has no significant coverage, i.e. test
+   results are `neutral`.
+
 All variants of these can be overruled by a valid `unblock`-hint.
 
 Note that this does not and cannot restrict architecture specific
