@@ -30,6 +30,7 @@ import sys
 import time
 import urllib.parse
 from urllib.request import urlopen
+from functools import total_ordering
 
 import apt_pkg
 
@@ -40,14 +41,18 @@ from britney2.policies.policy import BasePolicy, PolicyVerdict
 from britney2.utils import iter_except
 
 
+@total_ordering
 class Result(Enum):
-    FAIL = 1
-    PASS = 2
-    NEUTRAL = 3
-    NONE = 4
-    OLD_FAIL = 5
-    OLD_PASS = 6
-    OLD_NEUTRAL = 7
+    PASS = 1
+    NEUTRAL = 2
+    FAIL = 3
+    OLD_PASS = 4
+    OLD_NEUTRAL = 5
+    OLD_FAIL = 6
+    NONE = 7
+
+    def __lt__(self, other):
+        return True if self.value < other.value else False
 
 
 EXCUSES_LABELS = {
@@ -928,7 +933,7 @@ class AutopkgtestPolicy(BasePolicy):
         except (KeyError, ValueError):
             self.logger.info('-> does not match any pending request for %s/%s', src, arch)
 
-    def add_trigger_to_results(self, trigger, src, ver, arch, run_id, seen, status):
+    def add_trigger_to_results(self, trigger, src, ver, arch, run_id, timestamp, status_to_add):
         # Ensure that we got a new enough version
         try:
             (trigsrc, trigver) = trigger.split('/', 1)
@@ -939,17 +944,28 @@ class AutopkgtestPolicy(BasePolicy):
             self.logger.debug('test trigger %s, but run for older version %s, ignoring', trigger, ver)
             return
 
-        result = self.test_results.setdefault(trigger, {}).setdefault(
+        stored_result = self.test_results.setdefault(trigger, {}).setdefault(
             src, {}).setdefault(arch, [Result.FAIL, None, '', 0])
 
-        # don't clobber existing passed results with non-passing ones from
-        # re-runs, except for reference updates
-        if status == Result.PASS or result[0] != Result.PASS or \
-           (self.options.adt_baseline == 'reference' and trigger == REF_TRIG):
-            result[0] = status
-            result[1] = ver
-            result[2] = run_id
-            result[3] = seen
+        # reruns shouldn't flip the result from PASS or NEUTRAL to
+        # FAIL, so remember the most recent version of the best result
+        # we've seen. Except for reference updates, which we always
+        # want to update with the most recent result. The result data
+        # may not be ordered by timestamp, so we need to check time.
+        update = False
+        if self.options.adt_baseline == 'reference' and trigger == REF_TRIG:
+            if stored_result[3] < timestamp:
+                update = True
+        elif status_to_add < stored_result[0]:
+            update = True
+        elif status_to_add == stored_result[0] and stored_result[3] < timestamp:
+            update = True
+
+        if update:
+            stored_result[0] = status_to_add
+            stored_result[1] = ver
+            stored_result[2] = run_id
+            stored_result[3] = timestamp
 
     def send_test_request(self, src, arch, triggers, huge=False):
         '''Send out AMQP request for testing src/arch for triggers

@@ -673,6 +673,49 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         amqp = self.read_amqp()
         assert len(amqp) == 0
 
+    def test_unordered_debci_json(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/unordered-debci.json',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            pkg_universe=simple_universe,
+            inst_tester=simple_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'ALWAYSFAIL'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert len(amqp) == 0
+
+    def test_triggers_pass_to_fail_to_neutral(self):
+        src_name = 'pkg'
+        builder = new_pkg_universe_builder()
+        builder.new_package(pkg1).in_testing()
+        builder.new_package(pkg2).not_in_testing()
+        builder.new_package(dummy).in_testing().depends_on_any_of(pkg1, pkg2)
+        intermittent_universe, intermittent_inst_tester = builder.build()
+        policy = initialize_policy(
+            'autopkgtest/pass-to-fail-to-neutral',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            pkg_universe=intermittent_universe,
+            inst_tester=intermittent_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'PASS'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert len(amqp) == 0
+
     def test_reference_too_old(self):
         src_name = 'pkg'
         policy = initialize_policy(
