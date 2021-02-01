@@ -188,6 +188,10 @@ class AutopkgtestPolicy(BasePolicy):
             self.options.adt_reference_max_age = \
               int(self.options.adt_reference_max_age) * SECPERDAY
 
+        if not hasattr(self.options, 'adt_ignore_failure_for_new_tests'):
+            # Make adt_ignore_failure_for_new_tests optional
+            setattr(self.options, 'adt_ignore_failure_for_new_tests', False)
+
         # read the cached results that we collected so far
         if os.path.exists(self.results_cache_file):
             with open(self.results_cache_file) as f:
@@ -1120,6 +1124,19 @@ class AutopkgtestPolicy(BasePolicy):
         self.logger.debug('Result for src %s ever: %s', src, result_ever[0].name)
         return result_ever
 
+    def has_test_in_target(self, src):
+        test_in_target = False
+        try:
+            srcinfo = self.suite_info.target_suite.sources[src]
+            if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
+                test_in_target = True
+        # AttributeError is only needed for the test suite as
+        # srcinfo can be a NoneType
+        except (KeyError, AttributeError):
+            pass
+
+        return test_in_target
+
     def pkg_test_result(self, src, ver, arch, trigger):
         '''Get current test status of a particular package
 
@@ -1147,15 +1164,7 @@ class AutopkgtestPolicy(BasePolicy):
                     baseline_result = Result.FAIL
 
                 # Check if the autopkgtest (still) exists in the target suite
-                test_in_target = False
-                try:
-                    srcinfo = self.suite_info.target_suite.sources[src]
-                    if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
-                        test_in_target = True
-                # AttributeError is only needed for the test suite as
-                # srcinfo can be a NoneType
-                except (KeyError, AttributeError):
-                    pass
+                test_in_target = self.has_test_in_target(src)
 
                 if test_in_target and baseline_result in \
                    {Result.NONE, Result.OLD_FAIL, Result.OLD_NEUTRAL, Result.OLD_PASS}:
@@ -1197,7 +1206,9 @@ class AutopkgtestPolicy(BasePolicy):
         except KeyError:
             # no result for src/arch; still running?
             if arch in self.pending_tests.get(trigger, {}).get(src, []):
-                if baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
+                if self.options.adt_ignore_failure_for_new_tests and not self.has_test_in_target(src):
+                    result = 'RUNNING-ALWAYSFAIL'
+                elif baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
                     result = 'RUNNING'
                 else:
                     result = 'RUNNING-ALWAYSFAIL'

@@ -49,7 +49,6 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
         adt_success_bounty=3,
         adt_regression_penalty=False,
         adt_retry_url_mech='run_id',
-        adt_ignore_failure_for_new_tests=False,
         **kwargs)
     suite_info = Suites(
         Suite(SuiteClass.TARGET_SUITE, target, os.path.join(test_dir, target), ''),
@@ -558,6 +557,22 @@ class TestAutopkgtestPolicy(unittest.TestCase):
             adt_amqp=self.amqp,
             pkg_universe=simple_universe,
             inst_tester=simple_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
+        assert autopkgtest_policy_info[src_name][ARCH][0] == 'RUNNING'
+        assert autopkgtest_policy_info[src_name][ARCH][1] == 'status/pending'
+        assert autopkgtest_policy_info[src_name][ARCH][2] == 'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert amqp == 'debci-testing-amd64:' + src_name + ' {"triggers": ["' + src_name + '/2.0"]}'
+
+    def test_pass_to_new_with_baseline_reference(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/pass-to-new',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            pkg_universe=simple_universe,
+            inst_tester=simple_inst_tester,
+            adt_baseline='reference')
         autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
         assert autopkgtest_policy_info[src_name][ARCH][0] == 'RUNNING'
         assert autopkgtest_policy_info[src_name][ARCH][1] == 'status/pending'
