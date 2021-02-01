@@ -1194,7 +1194,9 @@ class AutopkgtestPolicy(BasePolicy):
         except KeyError:
             # no result for src/arch; still running?
             if arch in self.pending_tests.get(trigger, {}).get(src, []):
-                if baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
+                if baseline_result == Result.NONE and self.options.adt_ignore_failure_for_new_tests:
+                    result = 'RUNNING-ALWAYSFAIL'
+                elif baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
                     result = 'RUNNING'
                 else:
                     result = 'RUNNING-ALWAYSFAIL'
