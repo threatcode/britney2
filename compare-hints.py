@@ -72,16 +72,19 @@ def get_frozen_hints(brit):
 
 
 def affects(brit, target_suite, hint):
-    # FIXME: discard architectures not present in kali right away
     # FIXME: handle architecture/bin vs src differently
     # FIXME: implement proper check for block
     # FIXME: implement proper check for force-badtest
 
     pkg = hint.package
     version = hint.version
+    arch = hint.architecture
 
     if pkg not in hint.suite.sources:
         # that pkg in not in kali-dev at all
+        return False, None
+
+    if arch not in ('amd64', 'i386', 'armel', 'armhf'):
         return False, None
 
     if pkg not in target_suite.sources:
@@ -128,7 +131,9 @@ if __name__ == '__main__':
 
     diff = set(debian_hints._hints) - set(kali_hints._hints)
     target_suite = brit.suite_info.target_suite
-    for hint in diff:
-        verdict, migration = affects(brit, target_suite, hint)
-        if verdict:
-            print(hint, migration)
+    with open('data/debian-test-hints-to-import.txt', 'w') as f:
+        for hint in diff:
+            verdict, migration = affects(brit, target_suite, hint)
+            if verdict:
+                print(hint, migration)
+                f.write(f'{hint}\n')
