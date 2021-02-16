@@ -49,7 +49,7 @@ def download_debian_hints(debian_release_manager):
     return content.decode('utf-8')
 
 
-def register_debian_hints(brit):
+def register_debian_hints(brit, skip_non_test_hints=False):
     for debian_release_manager in DEBIAN_RELEASE_MANAGERS:
         brit.logger.info(f'Loading hints list for debian/{debian_release_manager}')
         hints = download_debian_hints(debian_release_manager)
@@ -58,6 +58,13 @@ def register_debian_hints(brit):
                                       britney.Britney.HINTS_ALL,
                                       debian_release_manager,
                                       hints_lines)
+        
+        if skip_non_test_hints:
+            new_hints = []
+            for hint in brit.hints._hints:
+                if not isinstance(hint, britney2.policies.policy.SimplePolicyHint):
+                    new_hints.append(hint)
+            brit.hints._hints = new_hints
 
 
 def get_frozen_hints(brit):
@@ -113,7 +120,7 @@ if __name__ == '__main__':
     brit._policy_engine.register_policy_hints(brit._hint_parser)
 
     # import and read debian hints
-    register_debian_hints(brit)
+    register_debian_hints(brit, skip_non_test_hints=True)
     debian_hints = get_frozen_hints(brit)
 
     print(kali_hints, len(kali_hints._hints))
