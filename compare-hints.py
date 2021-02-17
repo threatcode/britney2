@@ -23,6 +23,7 @@ DEBIAN_RELEASE_MANAGERS = ('adsb',
 
 DEBIAN_HINTS_URL = 'https://release.debian.org/britney/hints/'
 
+HINTS_DIFF = 'data/debian-test-hints-to-import.txt'
 
 # FIXME: monkey-patching...
 class HashableHint(britney2.hints.Hint):
@@ -40,8 +41,24 @@ class HashableMigrationItem(britney2.migrationitem.MigrationItem):
 britney2.migrationitem.MigrationItem = HashableMigrationItem
 
 
+def init_store():
+    """ Minimal set of files that must exist even for a dry-run """
+    names = ['age-policy-urgencies']
+    for store in ('rc-bugs-DIST', 'piuparts-summary-DIST.json'):
+        for distribution in ('dev', 'rolling'):
+            names.append(store.replace('DIST', f'kali-{distribution}'))
+
+    data_dir = 'data/state'  # FIXME: from conf
+    os.makedirs(data_dir)
+    for name in names:
+        f = os.path.join(data_dir, name)
+        if not os.path.isfile(f):
+            os.mknod(f)
+
+
 def download_debian_hints(debian_release_manager):
     url = os.path.join(DEBIAN_HINTS_URL, debian_release_manager)
+    brit.logger.info(f'... from {url}')
     content = urllib.request.urlopen(url).read()
     # FIXME: keep a local copy
     # with open(f'{debian_release_manager}.txt', 'wb') as f:
@@ -115,6 +132,7 @@ def affects(brit, target_suite, hint):
 
 if __name__ == '__main__':
     # initialize britney and store its hints
+    init_store()
     brit = britney.Britney()
     kali_hints = get_frozen_hints(brit)
 
@@ -126,14 +144,17 @@ if __name__ == '__main__':
     register_debian_hints(brit, skip_non_test_hints=True)
     debian_hints = get_frozen_hints(brit)
 
-    print(kali_hints, len(kali_hints._hints))
-    print(debian_hints, len(debian_hints._hints))
+    brit.logger.info(f'{len(kali_hints._hints)} Kali hints')
+    brit.logger.info(f'{len(debian_hints._hints)} Debian hints')
+    brit.logger.info('Hints set-diff is:')
 
     diff = set(debian_hints._hints) - set(kali_hints._hints)
     target_suite = brit.suite_info.target_suite
-    with open('data/debian-test-hints-to-import.txt', 'w') as f:
+    with open(HINTS_DIFF, 'w') as f:
         for hint in diff:
             verdict, migration = affects(brit, target_suite, hint)
             if verdict:
                 print(hint, migration)
                 f.write(f'{hint}\n')
+
+    brit.logger.info(f'Hints set-diff written to {HINTS_DIFF}')
