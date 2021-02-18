@@ -149,6 +149,7 @@ if __name__ == '__main__':
     brit.logger.info('Hints set-diff is:')
 
     diff = set(debian_hints._hints) - set(kali_hints._hints)
+    diff = sorted(diff, key=str)
     target_suite = brit.suite_info.target_suite
     with open(HINTS_DIFF, 'w') as f:
         for hint in diff:
