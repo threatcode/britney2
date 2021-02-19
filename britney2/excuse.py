@@ -478,8 +478,8 @@ class Excuse(object):
                              if not d.valid and d.possible)
 
             break_deps = [x for x, _ in self.break_deps if
-                          x not in migrate-after and
-                          x not in blocked-by]
+                          x not in migrate_after and
+                          x not in blocked_by]
 
             def sorted_uvnames(deps):
                 return sorted(excuses[d].uvname for d in deps)
