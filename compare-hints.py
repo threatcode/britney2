@@ -101,7 +101,7 @@ def affects(brit, target_suite, hint):
         # that pkg in not in kali-dev at all
         return False, None
 
-    if arch not in ('amd64', 'i386', 'armel', 'armhf'):
+    if arch not in brit.options.architectures:
         return False, None
 
     if pkg not in target_suite.sources:
