@@ -1,5 +1,16 @@
 #!/usr/bin/python3
 
+# A typical call goes as follows (without the full list of
+# architectures, the parsing will break when an arch-specific hint for
+# a non-Kali arch is encountered on the Debian side):
+# 
+#   ./compare-hints.py -c compare-hints.conf --architectures "i386 amd64 arm64 armel armhf mips mipsel mips64el powerpc ppc64el s390x" --dry-run --no-compute-migrations -v --nuninst-cache
+#
+# After the run, the list of hints which should potentially be
+# imported from Debian can be found in:
+#   data/debian-test-hints-to-import.txt
+
+
 import apt_pkg
 import copy
 import os.path
