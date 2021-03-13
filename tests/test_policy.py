@@ -124,7 +124,14 @@ def apply_src_policy(policy, expected_verdict, src_name, *, suite='unstable',
         _, _, excuse = create_policy_objects(src_name, pkgs=src_u.binaries, autopkgtest=autopkgtest)
     else:
         src_t, src_u, excuse = create_policy_objects(src_name, target_version, source_version, autopkgtest=autopkgtest)
-    excuse.has_fully_successful_autopkgtest = len(autopkgtest) > 0 and autopkgtest_successful
+    if len(autopkgtest) == 0:
+        excuse.autopkgtest_results = None
+    elif autopkgtest_successful:
+        excuse.autopkgtest_results = {'PASS'}
+    else:
+        # this doesn't cover all cases correctly
+        excuse.autopkgtest_results = {'REGRESSION'}
+
     suite_info.target_suite.sources[src_name] = src_t
     suite_info[suite].sources[src_name] = src_u
     factory = MigrationItemFactory(suite_info)

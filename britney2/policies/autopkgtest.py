@@ -366,7 +366,7 @@ class AutopkgtestPolicy(BasePolicy):
     def apply_src_policy_impl(self, tests_info, item, source_data_tdist, source_data_srcdist, excuse):
         # initialize
         verdict = PolicyVerdict.PASS
-        all_self_tests_pass = excuse.has_fully_successful_autopkgtest
+        all_self_tests_pass = False
         source_name = item.package
         results_info = []
 
@@ -417,8 +417,10 @@ class AutopkgtestPolicy(BasePolicy):
 
                 # A source package is elegible for the bounty if it has tests
                 # of its own that pass on all tested architectures.
-                if testsrc == source_name and r == {'PASS'}:
-                    all_self_tests_pass = True
+                if testsrc == source_name:
+                    excuse.autopkgtest_results = r
+                    if r == {'PASS'}:
+                        all_self_tests_pass = True
 
                 if testver:
                     testname = '%s/%s' % (testsrc, testver)

@@ -1247,29 +1247,13 @@ class BlockPolicy(BasePolicy):
         verdict = PolicyVerdict.PASS
         blocked = {}
         unblocked = {}
+        block_info = {}
         source_suite = item.suite
         suite_name = source_suite.name
         src = item.package
         is_primary = source_suite.suite_class == SuiteClass.PRIMARY_SOURCE_SUITE
 
-        if is_primary:
-            if 'source' in self._blockall:
-                blocked['block'] = self._blockall['source'].user
-                excuse.add_hint(self._blockall['source'])
-            elif 'new-source' in self._blockall and \
-                    src not in self.suite_info.target_suite.sources:
-                blocked['block'] = self._blockall['new-source'].user
-                excuse.add_hint(self._blockall['new-source'])
-            elif 'key' in self._blockall and src in self._key_packages:
-                blocked['block'] = self._blockall['key'].user
-                excuse.add_hint(self._blockall['key'])
-            elif 'no-autopkgtest' in self._blockall:
-                if not excuse.has_fully_successful_autopkgtest:
-                    blocked['block'] = self._blockall['no-autopkgtest'].user
-                    excuse.add_hint(self._blockall['no-autopkgtest'])
-        else:
-            blocked['block'] = suite_name
-            excuse.needs_approval = True
+        tooltip = "please contact %s-release if update is needed" % self.options.distribution
 
         shints = self.hints.search(package=src)
         mismatches = False
@@ -1291,6 +1275,48 @@ class BlockPolicy(BasePolicy):
                     blocked[m.group(2)] = hint.user
                     excuse.add_hint(hint)
 
+        if 'block' not in blocked and is_primary:
+            # if there is a specific block hint for this package, we don't
+            # check for the general hints
+
+            if self.options.distribution == "debian":
+                url = "https://release.debian.org/testing/freeze_policy.html"
+                tooltip = 'Follow the <a href="%s">freeze policy</a> when applying for an unblock' % url
+
+            if 'source' in self._blockall:
+                blocked['block'] = self._blockall['source'].user
+                excuse.add_hint(self._blockall['source'])
+            elif 'new-source' in self._blockall and \
+                    src not in self.suite_info.target_suite.sources:
+                blocked['block'] = self._blockall['new-source'].user
+                excuse.add_hint(self._blockall['new-source'])
+                # no tooltip: new sources will probably not be accepted anyway
+                block_info['block'] = "blocked by %s: is not in %s" % \
+                    (self._blockall['new-source'].user,
+                        self.suite_info.target_suite.name)
+            elif 'key' in self._blockall and src in self._key_packages:
+                blocked['block'] = self._blockall['key'].user
+                excuse.add_hint(self._blockall['key'])
+                block_info['block'] = "blocked by %s: is a key package (%s)" % \
+                    (self._blockall['key'].user, tooltip)
+            elif 'no-autopkgtest' in self._blockall:
+                if excuse.autopkgtest_results == {'PASS'}:
+                    if not blocked:
+                        excuse.addinfo("not blocked: has successful autopkgtest")
+                else:
+                    blocked['block'] = self._blockall['no-autopkgtest'].user
+                    excuse.add_hint(self._blockall['no-autopkgtest'])
+                    if not excuse.autopkgtest_results:
+                        block_info['block'] = "blocked by %s: does not have autopkgtest (%s)" % \
+                            (self._blockall['no-autopkgtest'].user, tooltip)
+                    else:
+                        block_info['block'] = "blocked by %s: autopkgtest not fully successful (%s)" % \
+                            (self._blockall['no-autopkgtest'].user, tooltip)
+
+        elif not is_primary:
+            blocked['block'] = suite_name
+            excuse.needs_approval = True
+
         for block_cmd in blocked:
             unblock_cmd = 'un'+block_cmd
             if block_cmd in unblocked:
@@ -1302,14 +1328,15 @@ class BlockPolicy(BasePolicy):
             else:
                 verdict = PolicyVerdict.REJECTED_NEEDS_APPROVAL
                 if is_primary or block_cmd == 'block-udeb':
-                    tooltip = "please contact %s-release if update is needed" % self.options.distribution
                     # redirect people to d-i RM for udeb things:
                     if block_cmd == 'block-udeb':
                         tooltip = "please contact the d-i release manager if an update is needed"
-                    excuse.add_verdict_info(
-                        verdict,
-                        "Not touching package due to %s request by %s (%s)" %
-                        (block_cmd, blocked[block_cmd], tooltip))
+                    if block_cmd in block_info:
+                        info = block_info[block_cmd]
+                    else:
+                        info = "Not touching package due to %s request by %s (%s)" % \
+                            (block_cmd, blocked[block_cmd], tooltip)
+                    excuse.add_verdict_info(verdict, info)
                 else:
                     excuse.add_verdict_info(verdict, "NEEDS APPROVAL BY RM")
                 excuse.addreason("block")
