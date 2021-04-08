@@ -499,9 +499,11 @@ class AutopkgtestPolicy(BasePolicy):
                         message += ' <a href="%s">[artifacts]</a>' % artifact_url
                     html_archmsg.append(message)
 
-                # render HTML line for testsrc entry, but only when action is
-                # or may be required
-                if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'}:
+                # render HTML line for testsrc entry
+                # - if action is or may be required
+                # - for ones own package
+                if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'} or \
+                   testsrc == source_name:
                     results_info.append("autopkgtest for %s: %s" % (testname, ', '.join(html_archmsg)))
 
         if verdict != PolicyVerdict.PASS:
