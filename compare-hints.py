@@ -13,6 +13,7 @@
 
 import apt_pkg
 import copy
+import datetime
 import os.path
 import urllib.request
 
@@ -35,6 +36,7 @@ DEBIAN_RELEASE_MANAGERS = ('adsb',
 DEBIAN_HINTS_URL = 'https://release.debian.org/britney/hints/'
 
 HINTS_DIFF = 'data/debian-test-hints-to-import.txt'
+
 
 # FIXME: monkey-patching...
 class HashableHint(britney2.hints.Hint):
@@ -141,7 +143,26 @@ def affects(brit, target_suite, hint):
     return verdict, f'{testing_version} to {version}'
 
 
+def write_hints_to_file(filename, hints, timestamp):
+    """ prepend timestamped hints to existing file. """
+
+    new_content = f'# {timestamp}\n'
+    new_content += '\n'.join([str(hint) for hint in hints])
+    new_content += '\n' * 2
+
+    if not os.path.isfile(filename):
+        open(filename, 'a').close()
+
+    with open(filename, 'r+') as f:
+        existing_content = f.read()
+        f.seek(0)
+        f.write(new_content)
+        f.write(existing_content)
+
+
 if __name__ == '__main__':
+    timestamp = datetime.datetime.now().isoformat(timespec='minutes')
+
     # initialize britney and store its hints
     init_store()
     brit = britney.Britney()
@@ -162,11 +183,13 @@ if __name__ == '__main__':
     diff = set(debian_hints._hints) - set(kali_hints._hints)
     diff = sorted(diff, key=str)
     target_suite = brit.suite_info.target_suite
-    with open(HINTS_DIFF, 'w') as f:
-        for hint in diff:
-            verdict, migration = affects(brit, target_suite, hint)
-            if verdict:
-                print(hint, migration)
-                f.write(f'{hint}\n')
+    new_hints = []
 
+    for hint in diff:
+        verdict, migration = affects(brit, target_suite, hint)
+        if verdict:
+            print(hint, migration)
+            new_hints.append(hint)
+
+    write_hints_to_file(HINTS_DIFF, new_hints, timestamp)
     brit.logger.info(f'Hints set-diff written to {HINTS_DIFF}')
