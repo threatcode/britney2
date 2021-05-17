@@ -49,6 +49,7 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
         adt_success_bounty=3,
         adt_regression_penalty=False,
         adt_retry_url_mech='run_id',
+        adt_ignore_failure_for_new_tests=False,
         **kwargs)
     suite_info = Suites(
         Suite(SuiteClass.TARGET_SUITE, target, os.path.join(test_dir, target), ''),
@@ -437,6 +438,11 @@ builder_breaks.new_package(pkg1).depends_on(inter).in_testing()
 builder_breaks.new_package(pkg2).depends_on(inter).not_in_testing().conflicts_with(broken1)
 breaks_universe, breaks_inst_tester = builder_breaks.build()
 
+builder_new = new_pkg_universe_builder()
+builder_new.new_package(pkg2).not_in_testing()
+builder_new.new_package(dummy).in_testing()
+new_universe, new_inst_tester = builder_new.build()
+
 
 class TestAutopkgtestPolicy(unittest.TestCase):
     import apt_pkg
@@ -530,10 +536,6 @@ class TestAutopkgtestPolicy(unittest.TestCase):
 
     def test_new(self):
         src_name = 'pkg'
-        builder_new = new_pkg_universe_builder()
-        builder_new.new_package(pkg2).not_in_testing()
-        builder_new.new_package(dummy).in_testing()
-        new_universe, new_inst_tester = builder_new.build()
         policy = initialize_policy(
             'autopkgtest/new',
             AutopkgtestPolicy,
@@ -723,7 +725,7 @@ class TestAutopkgtestPolicy(unittest.TestCase):
         amqp = self.read_amqp()
         assert len(amqp) == 0
 
-    def test_reference_too_old(self):
+    def test_reference_too_old_and_fail(self):
         src_name = 'pkg'
         policy = initialize_policy(
             'autopkgtest/fail-to-fail',
@@ -742,6 +744,66 @@ class TestAutopkgtestPolicy(unittest.TestCase):
             'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
         amqp = self.read_amqp()
         assert 'migration-reference/0' in amqp
+
+    def test_reference_too_old_and_pass(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/pass-to-fail',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            adt_reference_max_age=1,
+            pkg_universe=simple_universe,
+            inst_tester=simple_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_PERMANENTLY, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'REGRESSION'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert 'migration-reference/0' in amqp
+
+    def test_reference_too_old_and_neutral(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/neutral-to-fail',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            adt_reference_max_age=1,
+            pkg_universe=simple_universe,
+            inst_tester=simple_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_PERMANENTLY, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'REGRESSION'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert 'migration-reference/0' in amqp
+
+    def test_reference_too_old_and_neutral_not_in_target(self):
+        src_name = 'pkg'
+        policy = initialize_policy(
+            'autopkgtest/neutral-to-fail',
+            AutopkgtestPolicy,
+            adt_amqp=self.amqp,
+            adt_retry_older_than=1,
+            adt_baseline='reference',
+            adt_reference_max_age=1,
+            pkg_universe=new_universe,
+            inst_tester=new_inst_tester)
+        autopkgtest_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_PERMANENTLY, src_name)
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][0] == 'REGRESSION'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][1] == \
+            'data/autopkgtest/testing/amd64/' + src_name[0] + '/' + src_name + '/2/log.gz'
+        assert autopkgtest_policy_info[src_name + '/2.0'][ARCH][2] == \
+            'packages/' + src_name[0] + '/' + src_name + '/testing/amd64'
+        amqp = self.read_amqp()
+        assert 'migration-reference/0' not in amqp
 
 
 if __name__ == '__main__':

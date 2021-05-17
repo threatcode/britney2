@@ -1146,30 +1146,29 @@ class AutopkgtestPolicy(BasePolicy):
                   (trigger.startswith('linux-meta') or trigger.startswith('linux/')):
                     baseline_result = Result.FAIL
 
-                if baseline_result == Result.FAIL:
+                # Check if the autopkgtest (still) exists in the target suite
+                test_in_target = False
+                try:
+                    srcinfo = self.suite_info.target_suite.sources[src]
+                    if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
+                        test_in_target = True
+                # AttributeError is only needed for the test suite as
+                # srcinfo can be a NoneType
+                except (KeyError, AttributeError):
+                    pass
+
+                if test_in_target and baseline_result in \
+                   {Result.NONE, Result.OLD_FAIL, Result.OLD_NEUTRAL, Result.OLD_PASS}:
+                    self.request_test_if_not_queued(src, arch, REF_TRIG)
+
+                result = 'REGRESSION'
+                if baseline_result in {Result.FAIL, Result.OLD_FAIL}:
                     result = 'ALWAYSFAIL'
-                elif baseline_result in {Result.NONE, Result.OLD_FAIL}:
-                    # Check if the autopkgtest exists in the target suite and request it
-                    test_in_target = False
-                    try:
-                        srcinfo = self.suite_info.target_suite.sources[src]
-                        if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
-                            test_in_target = True
-                    except KeyError:
-                        pass
-                    if test_in_target:
-                        self.request_test_if_not_queued(src, arch, REF_TRIG)
-                        if baseline_result == Result.NONE:
-                            result = 'RUNNING-REFERENCE'
-                        else:
-                            result = 'ALWAYSFAIL'
-                    else:
-                        if self.options.adt_ignore_failure_for_new_tests:
-                            result = 'ALWAYSFAIL'
-                        else:
-                            result = 'REGRESSION'
-                else:
-                    result = 'REGRESSION'
+                elif baseline_result == Result.NONE and test_in_target:
+                    result = 'RUNNING-REFERENCE'
+
+                if self.options.adt_ignore_failure_for_new_tests and not test_in_target:
+                    result = 'ALWAYSFAIL'
 
                 if self.has_force_badtest(src, ver, arch):
                     result = 'IGNORE-FAIL'
