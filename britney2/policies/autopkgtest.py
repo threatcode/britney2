@@ -30,6 +30,7 @@ import sys
 import time
 import urllib.parse
 from urllib.request import urlopen
+from functools import total_ordering
 
 import apt_pkg
 
@@ -40,14 +41,18 @@ from britney2.policies.policy import BasePolicy, PolicyVerdict
 from britney2.utils import iter_except
 
 
+@total_ordering
 class Result(Enum):
-    FAIL = 1
-    PASS = 2
-    NEUTRAL = 3
-    NONE = 4
-    OLD_FAIL = 5
-    OLD_PASS = 6
-    OLD_NEUTRAL = 7
+    PASS = 1
+    NEUTRAL = 2
+    FAIL = 3
+    OLD_PASS = 4
+    OLD_NEUTRAL = 5
+    OLD_FAIL = 6
+    NONE = 7
+
+    def __lt__(self, other):
+        return True if self.value < other.value else False
 
 
 EXCUSES_LABELS = {
@@ -182,6 +187,10 @@ class AutopkgtestPolicy(BasePolicy):
         else:
             self.options.adt_reference_max_age = \
               int(self.options.adt_reference_max_age) * SECPERDAY
+
+        if not hasattr(self.options, 'adt_ignore_failure_for_new_tests'):
+            # Make adt_ignore_failure_for_new_tests optional
+            setattr(self.options, 'adt_ignore_failure_for_new_tests', False)
 
         # read the cached results that we collected so far
         if os.path.exists(self.results_cache_file):
@@ -361,7 +370,7 @@ class AutopkgtestPolicy(BasePolicy):
     def apply_src_policy_impl(self, tests_info, item, source_data_tdist, source_data_srcdist, excuse):
         # initialize
         verdict = PolicyVerdict.PASS
-        all_self_tests_pass = excuse.has_fully_successful_autopkgtest
+        all_self_tests_pass = False
         source_name = item.package
         results_info = []
 
@@ -412,8 +421,10 @@ class AutopkgtestPolicy(BasePolicy):
 
                 # A source package is elegible for the bounty if it has tests
                 # of its own that pass on all tested architectures.
-                if testsrc == source_name and r == {'PASS'}:
-                    all_self_tests_pass = True
+                if testsrc == source_name:
+                    excuse.autopkgtest_results = r
+                    if r == {'PASS'}:
+                        all_self_tests_pass = True
 
                 if testver:
                     testname = '%s/%s' % (testsrc, testver)
@@ -492,9 +503,11 @@ class AutopkgtestPolicy(BasePolicy):
                         message += ' <a href="%s">[artifacts]</a>' % artifact_url
                     html_archmsg.append(message)
 
-                # render HTML line for testsrc entry, but only when action is
-                # or may be required
-                if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'}:
+                # render HTML line for testsrc entry
+                # - if action is or may be required
+                # - for ones own package
+                if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'} or \
+                   testsrc == source_name:
                     results_info.append("autopkgtest for %s: %s" % (testname, ', '.join(html_archmsg)))
 
         if verdict != PolicyVerdict.PASS:
@@ -928,7 +941,7 @@ class AutopkgtestPolicy(BasePolicy):
         except (KeyError, ValueError):
             self.logger.info('-> does not match any pending request for %s/%s', src, arch)
 
-    def add_trigger_to_results(self, trigger, src, ver, arch, run_id, seen, status):
+    def add_trigger_to_results(self, trigger, src, ver, arch, run_id, timestamp, status_to_add):
         # Ensure that we got a new enough version
         try:
             (trigsrc, trigver) = trigger.split('/', 1)
@@ -939,17 +952,28 @@ class AutopkgtestPolicy(BasePolicy):
             self.logger.debug('test trigger %s, but run for older version %s, ignoring', trigger, ver)
             return
 
-        result = self.test_results.setdefault(trigger, {}).setdefault(
+        stored_result = self.test_results.setdefault(trigger, {}).setdefault(
             src, {}).setdefault(arch, [Result.FAIL, None, '', 0])
 
-        # don't clobber existing passed results with non-passing ones from
-        # re-runs, except for reference updates
-        if status == Result.PASS or result[0] != Result.PASS or \
-           (self.options.adt_baseline == 'reference' and trigger == REF_TRIG):
-            result[0] = status
-            result[1] = ver
-            result[2] = run_id
-            result[3] = seen
+        # reruns shouldn't flip the result from PASS or NEUTRAL to
+        # FAIL, so remember the most recent version of the best result
+        # we've seen. Except for reference updates, which we always
+        # want to update with the most recent result. The result data
+        # may not be ordered by timestamp, so we need to check time.
+        update = False
+        if self.options.adt_baseline == 'reference' and trigger == REF_TRIG:
+            if stored_result[3] < timestamp:
+                update = True
+        elif status_to_add < stored_result[0]:
+            update = True
+        elif status_to_add == stored_result[0] and stored_result[3] < timestamp:
+            update = True
+
+        if update:
+            stored_result[0] = status_to_add
+            stored_result[1] = ver
+            stored_result[2] = run_id
+            stored_result[3] = timestamp
 
     def send_test_request(self, src, arch, triggers, huge=False):
         '''Send out AMQP request for testing src/arch for triggers
@@ -1100,6 +1124,19 @@ class AutopkgtestPolicy(BasePolicy):
         self.logger.debug('Result for src %s ever: %s', src, result_ever[0].name)
         return result_ever
 
+    def has_test_in_target(self, src):
+        test_in_target = False
+        try:
+            srcinfo = self.suite_info.target_suite.sources[src]
+            if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
+                test_in_target = True
+        # AttributeError is only needed for the test suite as
+        # srcinfo can be a NoneType
+        except (KeyError, AttributeError):
+            pass
+
+        return test_in_target
+
     def pkg_test_result(self, src, ver, arch, trigger):
         '''Get current test status of a particular package
 
@@ -1126,30 +1163,21 @@ class AutopkgtestPolicy(BasePolicy):
                   (trigger.startswith('linux-meta') or trigger.startswith('linux/')):
                     baseline_result = Result.FAIL
 
-                if baseline_result == Result.FAIL:
+                # Check if the autopkgtest (still) exists in the target suite
+                test_in_target = self.has_test_in_target(src)
+
+                if test_in_target and baseline_result in \
+                   {Result.NONE, Result.OLD_FAIL, Result.OLD_NEUTRAL, Result.OLD_PASS}:
+                    self.request_test_if_not_queued(src, arch, REF_TRIG)
+
+                result = 'REGRESSION'
+                if baseline_result in {Result.FAIL, Result.OLD_FAIL}:
                     result = 'ALWAYSFAIL'
-                elif baseline_result in {Result.NONE, Result.OLD_FAIL}:
-                    # Check if the autopkgtest exists in the target suite and request it
-                    test_in_target = False
-                    try:
-                        srcinfo = self.suite_info.target_suite.sources[src]
-                        if 'autopkgtest' in srcinfo.testsuite or self.has_autodep8(srcinfo):
-                            test_in_target = True
-                    except KeyError:
-                        pass
-                    if test_in_target:
-                        self.request_test_if_not_queued(src, arch, REF_TRIG)
-                        if baseline_result == Result.NONE:
-                            result = 'RUNNING-REFERENCE'
-                        else:
-                            result = 'ALWAYSFAIL'
-                    else:
-                        if self.options.adt_ignore_failure_for_new_tests:
-                            result = 'ALWAYSFAIL'
-                        else:
-                            result = 'REGRESSION'
-                else:
-                    result = 'REGRESSION'
+                elif baseline_result == Result.NONE and test_in_target:
+                    result = 'RUNNING-REFERENCE'
+
+                if self.options.adt_ignore_failure_for_new_tests and not test_in_target:
+                    result = 'ALWAYSFAIL'
 
                 if self.has_force_badtest(src, ver, arch):
                     result = 'IGNORE-FAIL'
@@ -1178,7 +1206,9 @@ class AutopkgtestPolicy(BasePolicy):
         except KeyError:
             # no result for src/arch; still running?
             if arch in self.pending_tests.get(trigger, {}).get(src, []):
-                if baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
+                if self.options.adt_ignore_failure_for_new_tests and not self.has_test_in_target(src):
+                    result = 'RUNNING-ALWAYSFAIL'
+                elif baseline_result != Result.FAIL and not self.has_force_badtest(src, ver, arch):
                     result = 'RUNNING'
                 else:
                     result = 'RUNNING-ALWAYSFAIL'
