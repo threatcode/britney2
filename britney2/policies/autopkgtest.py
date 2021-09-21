@@ -508,7 +508,11 @@ class AutopkgtestPolicy(BasePolicy):
                 # - for ones own package
                 if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'} or \
                    testsrc == source_name:
-                    results_info.append("autopkgtest for %s: %s" % (testname, ', '.join(html_archmsg)))
+                    if testver:
+                        pkg = '<a href="#{0}">{0}</a>/{1}'.format(testsrc, testver)
+                    else:
+                        pkg = '<a href="#{0}">{0}</a>'.format(testsrc)
+                    results_info.append("autopkgtest for %s: %s" % (pkg, ', '.join(html_archmsg)))
 
         if verdict != PolicyVerdict.PASS:
             # check for force-skiptest hint
