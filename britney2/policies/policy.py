@@ -1764,6 +1764,15 @@ class ImplicitDependencyPolicy(BasePolicy):
                 # to check it
                 continue
 
+            if not pkg_id_s and \
+                    source_data_tdist.version == source_data_srcdist.version and \
+                    source_suite.suite_class == SuiteClass.ADDITIONAL_SOURCE_SUITE and \
+                    binaries_t_a[mypkg].architecture == 'all':
+                # we're very probably migrating a binNMU built in tpu where the arch:all
+                # binaries were not copied to it as that's not needed. This policy could
+                # needlessly block.
+                continue
+
             v = self.check_upgrade(pkg_id_t, pkg_id_s, source_name, myarch, broken_binaries, excuse)
 
             if v > verdict:
