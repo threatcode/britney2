@@ -184,7 +184,7 @@ class T(TestBase):
             {'lightgreen': (False, {})},
             {'lightgreen': [('old-version', '1'), ('new-version', '1.1~beta'),
                             ('reason', 'depends'),
-                            ('excuses', 'uninstallable on arch amd64, not running autopkgtest there')
+                            ('excuses', '∙ ∙ uninstallable on arch amd64, not running autopkgtest there')
                             ]
              })[1]
         # autopkgtest should not be triggered for uninstallable pkg
@@ -891,7 +891,7 @@ class T(TestBase):
             {'green': [('old-version', '1'), ('new-version', '2')],
              'brokengreen': [('old-version', '-'), ('new-version', '1'),
                              ('reason', 'depends'),
-                             ('excuses', 'uninstallable on arch amd64, not running autopkgtest there')],
+                             ('excuses', '∙ ∙ uninstallable on arch amd64, not running autopkgtest there')],
              })[1]
         # autopkgtest should not be triggered for uninstallable pkg
         self.assertEqual(self.amqp_requests, set())
@@ -1612,7 +1612,7 @@ class T(TestBase):
             {'lightgreen': (False, {})},
             {'lightgreen': [('old-version', '1'), ('new-version', '0.9~beta'),
                             ('reason', 'newerintesting'),
-                            ('excuses', 'ALERT: lightgreen is newer in the target suite (1 0.9~beta)')
+                            ('excuses', '∙ ∙ ALERT: lightgreen is newer in the target suite (1 0.9~beta)')
                             ]
              })[1]
 
@@ -1872,7 +1872,7 @@ class T(TestBase):
              },
             {'green': [('old-version', '1'), ('new-version', '2'),
                        ('reason', 'skiptest'),
-                       ('excuses', 'Should wait for tests relating to green 2, but forced by autopkgtest')]
+                       ('excuses', '∙ ∙ Should wait for tests relating to green 2, but forced by autopkgtest')]
              })
 
     def test_hint_force_skiptest_different_version(self):
@@ -1939,7 +1939,7 @@ class T(TestBase):
 # #            [('darkgreen', {'Version': '2'}, 'autopkgtest')],
 # #            {'darkgreen': (False, {'darkgreen': {'i386': 'RUNNING-ALWAYSFAIL', 'amd64': 'RUNNING-ALWAYSFAIL'}})},
 # #            {'darkgreen': [('reason', 'block'),
-# #                           ('excuses', 'Not touching package as requested in <a href="https://launchpad.net/bugs/12345">bug 12345</a> on Thu Aug 18 07:23:20 2016'),
+# #                           ('excuses', '∙ ∙ Not touching package as requested in <a href="https://launchpad.net/bugs/12345">bug 12345</a> on Thu Aug 18 07:23:20 2016'),
 # #                           ('is-candidate', False),
 # #                           ]
 # #            }
@@ -2133,7 +2133,7 @@ class T(TestBase):
 # #             'linux-firmware': (True, {'linux-firmware/2': {'amd64': 'PASS', 'i386': 'PASS'}}),
 # #            },
 # #            {'linux': [('reason', 'depends'),
-# #                       ('excuses', 'Invalidated by dependency'),
+# #                       ('excuses', '∙ ∙ Invalidated by dependency'),
 # #                       ('dependencies', {'blocked-by': ['linux-meta']})]
 # #            }
 # #        )
@@ -2619,7 +2619,7 @@ class T(TestBase):
 
         # it should cause the age to drop
         self.assertEqual(exc['green']['policy_info']['age']['age-requirement'], 8)
-        self.assertEqual(exc['green']['excuses'][-1], 'Required age is not allowed to drop below 8 days')
+        self.assertEqual(exc['green']['excuses'][-1], '∙ ∙ Required age is not allowed to drop below 8 days')
 
 
 if __name__ == '__main__':

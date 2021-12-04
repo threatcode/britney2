@@ -408,8 +408,18 @@ class Excuse(object):
         res = "<a id=\"%s\" name=\"%s\">%s</a> (%s to %s)\n<ul>\n" % \
             (self.uvname, self.uvname, self.uvname, self.ver[0], self.ver[1])
         info = self._text(excuses)
+        indented = False
         for line in info:
+            if not indented and line.startswith("∙ ∙ "):
+                res += "<ul>\n"
+                line = line[5:]
+                indented = True
             res += "<li>%s\n" % line
+            if indented and not line.startswith("∙ ∙ "):
+                res += "</ul>\n"
+                indented = False
+        if indented:
+            res += "</ul>\n"
         res = res + "</ul>\n"
         return res
 
@@ -436,15 +446,15 @@ class Excuse(object):
             res.append("Issues preventing migration:")
         for v in sorted(self.verdict_info.keys(), reverse=True):
             for x in self.verdict_info[v]:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         if self.infoline:
             res.append("Additional info:")
             for x in self.infoline:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         if self.htmlline:
             res.append("Legacy info:")
             for x in self.htmlline:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         return res
 
     def excusedata(self, excuses):
