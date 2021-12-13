@@ -387,10 +387,12 @@ class Excuse(object):
                 info = "Impossible %s: %s -> %s" % (d.deptype, self.uvname, desc)
             else:
                 duv = excuses[dep].uvname
+                # Make sure we link to package names
+                duv_src = duv.split("/")[0]
                 if d.valid:
-                    info = "%s: %s <a href=\"#%s\">%s</a>" % (d.deptype, self.uvname, duv, duv)
+                    info = "%s: %s <a href=\"#%s\">%s</a>" % (d.deptype, self.uvname, duv_src, duv)
                 else:
-                    info = "%s: %s <a href=\"#%s\">%s</a> (not considered)" % (d.deptype, self.uvname, duv, duv)
+                    info = "%s: %s <a href=\"#%s\">%s</a> (not considered)" % (d.deptype, self.uvname, duv_src, duv)
                     dep_issues[d.verdict].add("Invalidated by %s" % d.deptype.get_description())
             dep_issues[d.verdict].add(info)
 
