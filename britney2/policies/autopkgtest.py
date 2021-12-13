@@ -211,9 +211,9 @@ class AutopkgtestPolicy(BasePolicy):
                 # With debci, pending tests are determined from the debci file
                 self.pending_tests = {}
                 for res in test_results['results']:
-                    # Blacklisted tests don't get a version
+                    # tests denied on infrastructure don't get a version
                     if res['version'] is None:
-                        res['version'] = 'blacklisted'
+                        res['version'] = 'blocked-on-ci-infra'
                     (test_suite, triggers, src, arch, ver, status, run_id, seen) = ([
                         res['suite'],
                         res['trigger'],
