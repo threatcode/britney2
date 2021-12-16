@@ -632,11 +632,13 @@ class RCBugPolicy(BasePolicy):
 
         if new_bugs:
             verdict = PolicyVerdict.REJECTED_PERMANENTLY
-            excuse.add_verdict_info(verdict, "Updating %s introduces new bugs: %s" % (source_name, ", ".join(
+            excuse.add_verdict_info(verdict, "Updating %s would introduce bugs in %s: %s" % (
+              source_name, self.suite_info.target_suite.name, ", ".join(
                 ["<a href=\"https://bugs.debian.org/%s\">#%s</a>" % (quote(a), a) for a in new_bugs])))
 
         if old_bugs:
-            excuse.addinfo("Updating %s fixes old bugs: %s" % (source_name, ", ".join(
+            excuse.addinfo("Updating %s will fix bugs in %s: %s" % (
+              source_name, self.suite_info.target_suite.name, ", ".join(
                 ["<a href=\"https://bugs.debian.org/%s\">#%s</a>" % (quote(a), a) for a in old_bugs])))
 
         return verdict
