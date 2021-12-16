@@ -27,7 +27,7 @@ VERDICT2DESC = {
     PolicyVerdict.PASS_HINTED:
         'Will attempt migration due to a hint (Any information below is purely informational)',
     PolicyVerdict.REJECTED_TEMPORARILY:
-        'Waiting for test results, another package or too young (no action required now - check later)',
+        'Waiting for test results or another package, or too young (no action required now - check later)',
     PolicyVerdict.REJECTED_WAITING_FOR_ANOTHER_ITEM:
         'Waiting for another item to be ready to migrate (no action required now - check later)',
     PolicyVerdict.REJECTED_BLOCKED_BY_ANOTHER_ITEM:
