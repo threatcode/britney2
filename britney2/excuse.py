@@ -414,7 +414,7 @@ class Excuse(object):
         for line in info:
             if not indented and line.startswith("∙ ∙ "):
                 res += "<ul>\n"
-                line = line[5:]
+                line = line[4:]
                 indented = True
             res += "<li>%s\n" % line
             if indented and not line.startswith("∙ ∙ "):
