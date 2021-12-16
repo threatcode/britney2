@@ -1458,7 +1458,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
         self.logger.info("Loading signer info from %s", filename)
         with open(filename) as fd:
             if os.fstat(fd.fileno()).st_size < 1:
-                return singerinfo
+                return signerinfo
             signerinfo = json.load(fd)
 
         return signerinfo
