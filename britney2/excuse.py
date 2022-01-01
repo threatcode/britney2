@@ -412,14 +412,17 @@ class Excuse(object):
         info = self._text(excuses)
         indented = False
         for line in info:
-            if not indented and line.startswith("∙ ∙ "):
-                res += "<ul>\n"
+            stripped_this_line = False
+            if line.startswith("∙ ∙ "):
                 line = line[4:]
+                stripped_this_line = True
+            if not indented and stripped_this_line:
+                res += "<ul>\n"
                 indented = True
-            res += "<li>%s\n" % line
-            if indented and not line.startswith("∙ ∙ "):
+            elif indented and not stripped_this_line:
                 res += "</ul>\n"
                 indented = False
+            res += "<li>%s\n" % line
         if indented:
             res += "</ul>\n"
         res = res + "</ul>\n"
