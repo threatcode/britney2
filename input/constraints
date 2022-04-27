@@ -10,6 +10,8 @@ Package-List:
  virtualbox-guest-x11 [amd64 i386]
  virtualbox-guest-additions-iso [amd64 i386]
  virtualbox-ext-pack [amd64 i386]
+ # chromium
+ chromium [amd64 i386 arm64 armhf]
  # NVidia
  nvidia-kernel-dkms [amd64]
  nvidia-driver [amd64]
