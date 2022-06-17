@@ -145,3 +145,6 @@ ADT_IGNORE_FAILURE_FOR_NEW_TESTS = 0
 
 # Enable the piuparts policy (enabled by default)
 # PIUPARTS_ENABLE = yes
+
+# Enable the age policy (enabled by default)
+# AGE_ENABLE = yes

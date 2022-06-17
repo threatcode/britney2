@@ -515,7 +515,8 @@ class Britney(object):
             self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
         if getattr(self.options, 'adt_enable') == 'yes':
             self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
+        if getattr(self.options, 'age_enable', 'yes') == 'yes':
+            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
         self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
         if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
