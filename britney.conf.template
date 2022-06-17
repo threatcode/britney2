@@ -148,3 +148,6 @@ ADT_IGNORE_FAILURE_FOR_NEW_TESTS = 0
 
 # Enable the age policy (enabled by default)
 # AGE_ENABLE = yes
+
+# Enable the rc-bug policy (enabled by default)
+# RCBUG_ENABLE = yes
