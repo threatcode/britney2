@@ -197,7 +197,13 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
             sources = {}
             for component in self._components:
                 filename = os.path.join(basedir, component, "source", "Sources")
-                filename = possibly_compressed(filename)
+                try:
+                    filename = possibly_compressed(filename)
+                except FileNotFoundError:
+                    if component == "non-free-firmware":
+                        self.logger.info("Skipping %s as it doesn't exist", filename)
+                        continue
+                    raise
                 self.logger.info("Loading source packages from %s", filename)
                 read_sources_file(filename, sources)
         else:
@@ -373,7 +379,13 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
                                             component,
                                             binary_dir,
                                             'Packages')
-                    filename = possibly_compressed(filename)
+                    try:
+                        filename = possibly_compressed(filename)
+                    except FileNotFoundError:
+                        if component == "non-free-firmware":
+                            self.logger.info("Skipping %s as it doesn't exist", filename)
+                            continue
+                        raise
                     udeb_filename = os.path.join(basedir,
                                                  component,
                                                  "debian-installer",
