@@ -1758,9 +1758,7 @@ class ImplicitDependencyPolicy(BasePolicy):
                 continue
 
             v = self.check_upgrade(pkg_id_t, pkg_id_s, source_name, myarch, broken_binaries, excuse)
-
-            if v > verdict:
-                verdict = v
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         # each arch is processed separately, so if we already have info from
         # other archs, we need to merge the info from this arch
