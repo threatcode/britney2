@@ -60,6 +60,13 @@ class PolicyVerdict(Enum):
             PolicyVerdict.REJECTED_PERMANENTLY,
         }
 
+    @staticmethod
+    def worst_of(*args):
+        """Pick the "worst" of two verdicts - useful for aggregating two verdicts"""
+        # We could have used max everywhere, but "worst_of" seemed more clear (as then you do not have to remember
+        # the value of the verdicts)
+        return max(args)
+
     def __lt__(self, other):
         return True if self.value < other.value else False
 

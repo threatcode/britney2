@@ -51,19 +51,16 @@ class PolicyEngine(object):
                 if policy.src_policy.run_arch:
                     for arch in policy.options.architectures:
                         v = policy.apply_srcarch_policy_impl(pinfo, item, arch, source_t, source_u, excuse)
-                        if v > policy_verdict:
-                            policy_verdict = v
+                        policy_verdict = PolicyVerdict.worst_of(policy_verdict, v)
                 if policy.src_policy.run_src:
                     v = policy.apply_src_policy_impl(pinfo, item, source_t, source_u, excuse)
-                    if v > policy_verdict:
-                        policy_verdict = v
+                    policy_verdict = PolicyVerdict.worst_of(policy_verdict, v)
             # The base policy provides this field, so the subclass should leave it blank
             assert 'verdict' not in pinfo
             if policy_verdict != PolicyVerdict.NOT_APPLICABLE:
                 excuse.policy_info[policy.policy_id] = pinfo
                 pinfo['verdict'] = policy_verdict.name
-                if policy_verdict > excuse_verdict:
-                    excuse_verdict = policy_verdict
+                excuse_verdict = PolicyVerdict.worst_of(policy_verdict, excuse_verdict)
         excuse.policy_verdict = excuse_verdict
 
     def apply_srcarch_policies(self, item, arch, source_t, source_u, excuse):
@@ -74,8 +71,7 @@ class PolicyEngine(object):
             pinfo = {}
             if suite_class in policy.applicable_suites:
                 policy_verdict = policy.apply_srcarch_policy_impl(pinfo, item, arch, source_t, source_u, excuse)
-                if policy_verdict > excuse_verdict:
-                    excuse_verdict = policy_verdict
+                excuse_verdict = PolicyVerdict.worst_of(policy_verdict, excuse_verdict)
                 # The base policy provides this field, so the subclass should leave it blank
                 assert 'verdict' not in pinfo
                 if policy_verdict != PolicyVerdict.NOT_APPLICABLE:
@@ -940,16 +936,14 @@ class BuildDependsPolicy(BasePolicy):
             v = self._check_build_deps(deps, DependencyType.BUILD_DEPENDS, build_deps_info, item,
                                        source_data_tdist, source_data_srcdist, excuse,
                                        get_dependency_solvers=get_dependency_solvers)
-            if verdict < v:
-                verdict = v
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         ideps = source_data_srcdist.build_deps_indep
         if ideps:
             v = self._check_build_deps(ideps, DependencyType.BUILD_DEPENDS_INDEP, build_deps_info, item,
                                        source_data_tdist, source_data_srcdist, excuse,
                                        get_dependency_solvers=get_dependency_solvers)
-            if verdict < v:
-                verdict = v
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         return verdict
 
@@ -979,10 +973,8 @@ class BuildDependsPolicy(BasePolicy):
                     spec = DependencySpec(dep_type, arch)
                     excuse.add_package_depends(spec, {p})
 
-        if arch in results:
-            if results[arch] == BuildDepResult.FAILED:
-                if verdict < PolicyVerdict.REJECTED_PERMANENTLY:
-                    verdict = PolicyVerdict.REJECTED_PERMANENTLY
+        if arch in results and results[arch] == BuildDepResult.FAILED:
+            verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.REJECTED_PERMANENTLY)
 
         if arch in excuses_info:
             for excuse_text in excuses_info[arch]:
@@ -1190,8 +1182,7 @@ class BuiltUsingPolicy(BasePolicy):
                         excuse.add_detailed_info("Ignoring unsatisfiable Built-Using for %s/%s on %s %s" % (
                             pkg_name, arch, bu_source, bu_version))
                     else:
-                        if verdict < PolicyVerdict.REJECTED_PERMANENTLY:
-                            verdict = PolicyVerdict.REJECTED_PERMANENTLY
+                        verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.REJECTED_PERMANENTLY)
                         excuse.add_verdict_info(verdict, "%s/%s has unsatisfiable Built-Using on %s %s" % (
                             pkg_name, arch, bu_source, bu_version))
 
@@ -1435,8 +1426,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
                     allow_hints = self.hints.search('allow-archall-maintainer-upload', package=item.package)
                     if allow_hints:
                         buildd_ok = True
-                        if verdict < PolicyVerdict.PASS_HINTED:
-                            verdict = PolicyVerdict.PASS_HINTED
+                        verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.PASS_HINTED)
                         if pkg_arch not in buildd_info["signed-by"]:
                             excuse.addinfo("%s, but whitelisted by %s" % (uidinfo, allow_hints[0].user))
             if not buildd_ok:

@@ -27,8 +27,7 @@ class DependencyState(object):
 
     def invalidate(self, verdict):
         self.valid = False
-        if verdict > self.verdict:
-            self.verdict = verdict
+        self.verdict = PolicyVerdict.worst_of(verdict)
 
 
 class ImpossibleDependencyState(DependencyState):

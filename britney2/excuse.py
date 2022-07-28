@@ -294,8 +294,7 @@ class Excuse(object):
         param: dep: ExcuseDependency
         """
         self.addreason(dep.deptype.get_reason())
-        if self.policy_verdict < dep.verdict:
-            self.policy_verdict = dep.verdict
+        self.policy_verdict = PolicyVerdict.worst_of(self.policy_verdict, dep.verdict)
 
     def invalidate_dependency(self, name, verdict):
         """Invalidate dependency"""
