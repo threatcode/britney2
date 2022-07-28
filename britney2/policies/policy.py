@@ -806,9 +806,7 @@ class DependsPolicy(BasePolicy):
             # we don't check these in the policy (TODO - for now?)
             return verdict
 
-        source_name = item.package
         source_suite = item.suite
-        s_source = source_suite.sources[source_name]
         target_suite = self.suite_info.target_suite
 
         packages_s_a = source_suite.binaries[arch]
@@ -963,9 +961,6 @@ class BuildDependsPolicy(BasePolicy):
     def _add_info_for_arch(self, arch, excuses_info, blockers, results, dep_type, target_suite, source_suite, excuse, verdict):
         if arch in blockers:
             packages = blockers[arch]
-
-            sources_t = target_suite.sources
-            sources_s = source_suite.sources
 
             # for the solving packages, update the excuse to add the dependencies
             for p in packages:
@@ -1132,8 +1127,6 @@ class BuiltUsingPolicy(BasePolicy):
         source_suite = item.suite
         target_suite = self.suite_info.target_suite
         binaries_s = source_suite.binaries
-
-        sources_t = target_suite.sources
 
         def check_bu_in_suite(bu_source, bu_version, source_suite):
             found = False
@@ -1413,7 +1406,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
                     buildd_ok = True
                 uid = signer['uid']
                 uidinfo = "arch %s binaries uploaded by %s" % (pkg_arch, uid)
-            except KeyError as e:
+            except KeyError:
                 self.logger.info("signer info for %s %s (%s) on %s not found " % (pkg_name, binary_u.version, pkg_arch, arch))
                 uidinfo = "upload info for arch %s binaries not found" % (pkg_arch)
                 failure_verdict = PolicyVerdict.REJECTED_CANNOT_DETERMINE_IF_PERMANENT
@@ -1706,7 +1699,6 @@ class ImplicitDependencyPolicy(BasePolicy):
         source_suite = item.suite
         source_name = item.package
         target_suite = self.suite_info.target_suite
-        sources_t = target_suite.sources
         all_binaries = self._all_binaries
 
         # we check all binaries for this excuse that are currently in testing

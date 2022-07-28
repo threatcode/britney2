@@ -18,7 +18,7 @@ from collections import defaultdict
 import re
 
 from britney2 import DependencyType
-from britney2.excusedeps import DependencySpec, DependencyState, ImpossibleDependencyState
+from britney2.excusedeps import DependencyState
 from britney2.policies.policy import PolicyVerdict
 
 VERDICT2DESC = {
@@ -110,12 +110,10 @@ class ExcuseDependency(object):
         :param excuse: the excuse which is no longer valid
         :param verdict: the PolicyVerdict causing the invalidation
         """
-        invalidated_alternative = False
         valid_alternative_left = False
         for ds in self.depstates:
             if ds.dep == excuse:
                 ds.invalidate(verdict)
-                invalidated_alternative = True
             elif ds.valid:
                 valid_alternative_left = True
 

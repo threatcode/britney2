@@ -1041,7 +1041,6 @@ class AutopkgtestPolicy(BasePolicy):
 
         if has_result:
             result_state = result[0]
-            version = result[1]
             baseline = self.result_in_baseline(src, arch)
             if result_state in {Result.OLD_PASS, Result.OLD_FAIL, Result.OLD_NEUTRAL}:
                 pass
@@ -1107,7 +1106,6 @@ class AutopkgtestPolicy(BasePolicy):
             except KeyError:
                 self.logger.debug('Found NO result for src %s in reference: %s',
                                   src, result_reference[0].name)
-                pass
             self.result_in_baseline_cache[src][arch] = deepcopy(result_reference)
             return result_reference
 

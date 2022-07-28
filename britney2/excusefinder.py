@@ -4,14 +4,11 @@ from urllib.parse import quote
 import apt_pkg
 import logging
 
-from britney2 import DependencyType, PackageId
+from britney2 import PackageId
 from britney2.excuse import Excuse
-from britney2.excusedeps import DependencySpec
 from britney2.migrationitem import MigrationItem
 from britney2.policies import PolicyVerdict
-from britney2.utils import (invalidate_excuses, find_smooth_updateable_binaries,
-                            get_dependency_solvers,
-                            )
+from britney2.utils import invalidate_excuses, find_smooth_updateable_binaries
 
 
 class ExcuseFinder(object):
@@ -468,7 +465,6 @@ class ExcuseFinder(object):
         should_remove_source = self._should_remove_source
         should_upgrade_srcarch = self._should_upgrade_srcarch
         should_upgrade_src = self._should_upgrade_src
-        mi_factory = self._migration_item_factory
 
         sources_ps = pri_source_suite.sources
         sources_t = suite_info.target_suite.sources
@@ -492,7 +488,6 @@ class ExcuseFinder(object):
         # for every source package in the source suites, check if it should be upgraded
         for suite in chain((pri_source_suite, *suite_info.additional_source_suites)):
             sources_s = suite.sources
-            item_suffix = "_%s" % suite.excuses_suffix if suite.excuses_suffix else ''
             for pkg in sources_s:
                 src_s_data = sources_s[pkg]
                 if src_s_data.is_fakesrc:
