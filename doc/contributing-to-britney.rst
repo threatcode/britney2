@@ -26,6 +26,8 @@ repo).  Running the tests are done via::
   cd britney2
   # Basic unit tests
   py.test-3
+  # Basic unit tests without codestyle
+  TEST_FLAGS=nocodestyle py.test-3
   # Integration tests
   rm -fr ./test-out/
   ../britney2-tests/bin/runtests ./britney.py ../britney2-tests/t ./test-out
