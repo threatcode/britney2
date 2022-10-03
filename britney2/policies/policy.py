@@ -1730,7 +1730,7 @@ class ImplicitDependencyPolicy(BasePolicy):
                     action = "removing %s from %s" % (
                         pkg_id_t.name,
                         self.suite_info.target_suite.name)
-                info = "%s makes %s uninstallable" % (
+                info = '{0} makes <a href="#{1}">{1}</a> uninstallable'.format(
                     action, rdep_pkg.name)
                 verdict = PolicyVerdict.REJECTED_PERMANENTLY
                 excuse.add_verdict_info(verdict, info)
