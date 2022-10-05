@@ -18,7 +18,7 @@ from collections import defaultdict
 import re
 
 from britney2 import DependencyType
-from britney2.excusedeps import DependencySpec, DependencyState, ImpossibleDependencyState
+from britney2.excusedeps import DependencyState
 from britney2.policies.policy import PolicyVerdict
 
 VERDICT2DESC = {
@@ -27,7 +27,7 @@ VERDICT2DESC = {
     PolicyVerdict.PASS_HINTED:
         'Will attempt migration due to a hint (Any information below is purely informational)',
     PolicyVerdict.REJECTED_TEMPORARILY:
-        'Waiting for test results, another package or too young (no action required now - check later)',
+        'Waiting for test results or another package, or too young (no action required now - check later)',
     PolicyVerdict.REJECTED_WAITING_FOR_ANOTHER_ITEM:
         'Waiting for another item to be ready to migrate (no action required now - check later)',
     PolicyVerdict.REJECTED_BLOCKED_BY_ANOTHER_ITEM:
@@ -110,12 +110,10 @@ class ExcuseDependency(object):
         :param excuse: the excuse which is no longer valid
         :param verdict: the PolicyVerdict causing the invalidation
         """
-        invalidated_alternative = False
         valid_alternative_left = False
         for ds in self.depstates:
             if ds.dep == excuse:
                 ds.invalidate(verdict)
-                invalidated_alternative = True
             elif ds.valid:
                 valid_alternative_left = True
 
@@ -294,8 +292,7 @@ class Excuse(object):
         param: dep: ExcuseDependency
         """
         self.addreason(dep.deptype.get_reason())
-        if self.policy_verdict < dep.verdict:
-            self.policy_verdict = dep.verdict
+        self.policy_verdict = PolicyVerdict.worst_of(self.policy_verdict, dep.verdict)
 
     def invalidate_dependency(self, name, verdict):
         """Invalidate dependency"""
@@ -387,10 +384,12 @@ class Excuse(object):
                 info = "Impossible %s: %s -> %s" % (d.deptype, self.uvname, desc)
             else:
                 duv = excuses[dep].uvname
+                # Make sure we link to package names
+                duv_src = duv.split("/")[0]
                 if d.valid:
-                    info = "%s: %s <a href=\"#%s\">%s</a>" % (d.deptype, self.uvname, duv, duv)
+                    info = "%s: %s <a href=\"#%s\">%s</a>" % (d.deptype, self.uvname, duv_src, duv)
                 else:
-                    info = "%s: %s <a href=\"#%s\">%s</a> (not considered)" % (d.deptype, self.uvname, duv, duv)
+                    info = "%s: %s <a href=\"#%s\">%s</a> (not considered)" % (d.deptype, self.uvname, duv_src, duv)
                     dep_issues[d.verdict].add("Invalidated by %s" % d.deptype.get_description())
             dep_issues[d.verdict].add(info)
 
@@ -408,8 +407,21 @@ class Excuse(object):
         res = "<a id=\"%s\" name=\"%s\">%s</a> (%s to %s)\n<ul>\n" % \
             (self.uvname, self.uvname, self.uvname, self.ver[0], self.ver[1])
         info = self._text(excuses)
+        indented = False
         for line in info:
+            stripped_this_line = False
+            if line.startswith("∙ ∙ "):
+                line = line[4:]
+                stripped_this_line = True
+            if not indented and stripped_this_line:
+                res += "<ul>\n"
+                indented = True
+            elif indented and not stripped_this_line:
+                res += "</ul>\n"
+                indented = False
             res += "<li>%s\n" % line
+        if indented:
+            res += "</ul>\n"
         res = res + "</ul>\n"
         return res
 
@@ -436,15 +448,15 @@ class Excuse(object):
             res.append("Issues preventing migration:")
         for v in sorted(self.verdict_info.keys(), reverse=True):
             for x in self.verdict_info[v]:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         if self.infoline:
             res.append("Additional info:")
             for x in self.infoline:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         if self.htmlline:
             res.append("Legacy info:")
             for x in self.htmlline:
-                res.append("" + x + "")
+                res.append("∙ ∙ " + x + "")
         return res
 
     def excusedata(self, excuses):

@@ -211,9 +211,9 @@ class AutopkgtestPolicy(BasePolicy):
                 # With debci, pending tests are determined from the debci file
                 self.pending_tests = {}
                 for res in test_results['results']:
-                    # Blacklisted tests don't get a version
+                    # tests denied on infrastructure don't get a version
                     if res['version'] is None:
-                        res['version'] = 'blacklisted'
+                        res['version'] = 'blocked-on-ci-infra'
                     (test_suite, triggers, src, arch, ver, status, run_id, seen) = ([
                         res['suite'],
                         res['trigger'],
@@ -508,7 +508,11 @@ class AutopkgtestPolicy(BasePolicy):
                 # - for ones own package
                 if r - {'PASS', 'NEUTRAL', 'RUNNING-ALWAYSFAIL', 'ALWAYSFAIL'} or \
                    testsrc == source_name:
-                    results_info.append("autopkgtest for %s: %s" % (testname, ', '.join(html_archmsg)))
+                    if testver:
+                        pkg = '<a href="#{0}">{0}</a>/{1}'.format(testsrc, testver)
+                    else:
+                        pkg = '<a href="#{0}">{0}</a>'.format(testsrc)
+                    results_info.append("autopkgtest for %s: %s" % (pkg, ', '.join(html_archmsg)))
 
         if verdict != PolicyVerdict.PASS:
             # check for force-skiptest hint
@@ -1037,7 +1041,6 @@ class AutopkgtestPolicy(BasePolicy):
 
         if has_result:
             result_state = result[0]
-            version = result[1]
             baseline = self.result_in_baseline(src, arch)
             if result_state in {Result.OLD_PASS, Result.OLD_FAIL, Result.OLD_NEUTRAL}:
                 pass
@@ -1103,7 +1106,6 @@ class AutopkgtestPolicy(BasePolicy):
             except KeyError:
                 self.logger.debug('Found NO result for src %s in reference: %s',
                                   src, result_reference[0].name)
-                pass
             self.result_in_baseline_cache[src][arch] = deepcopy(result_reference)
             return result_reference
 

@@ -99,7 +99,6 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
                 if suite in {'testing', 'unstable'}:  # pragma: no cover
                     self.logger.error(missing_config_msg, suite.upper())
                     raise MissingRequiredConfigurationError(missing_config_msg % suite.upper())
-                # self.suite_info[suite] = SuiteInfo(name=suite, path=None, excuses_suffix=suffix)
                 self.logger.info("Optional suite %s is not defined (config option: %s) ", suite, suite.upper())
 
         assert target_suite is not None
@@ -197,7 +196,13 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
             sources = {}
             for component in self._components:
                 filename = os.path.join(basedir, component, "source", "Sources")
-                filename = possibly_compressed(filename)
+                try:
+                    filename = possibly_compressed(filename)
+                except FileNotFoundError:
+                    if component == "non-free-firmware":
+                        self.logger.info("Skipping %s as it doesn't exist", filename)
+                        continue
+                    raise
                 self.logger.info("Loading source packages from %s", filename)
                 read_sources_file(filename, sources)
         else:
@@ -373,7 +378,13 @@ class DebMirrorLikeSuiteContentLoader(SuiteContentLoader):
                                             component,
                                             binary_dir,
                                             'Packages')
-                    filename = possibly_compressed(filename)
+                    try:
+                        filename = possibly_compressed(filename)
+                    except FileNotFoundError:
+                        if component == "non-free-firmware":
+                            self.logger.info("Skipping %s as it doesn't exist", filename)
+                            continue
+                        raise
                     udeb_filename = os.path.join(basedir,
                                                  component,
                                                  "debian-installer",

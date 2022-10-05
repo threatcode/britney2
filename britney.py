@@ -510,13 +510,15 @@ class Britney(object):
             self.options.adt_ignore_failure_for_new_tests = True
 
         self._policy_engine.add_policy(DependsPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
+        if getattr(self.options, 'rcbug_enable', 'yes') == 'yes':
+            self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
+        if getattr(self.options, 'piuparts_enable', 'yes') == 'yes':
+            self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
         if getattr(self.options, 'adt_enable') == 'yes':
             self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
-        # Disable for Kali, it's more trouble than worth it
-        # self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
+        if getattr(self.options, 'age_enable', 'yes') == 'yes':
+            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
+        self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
         if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
             self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))

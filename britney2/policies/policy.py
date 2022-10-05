@@ -51,19 +51,16 @@ class PolicyEngine(object):
                 if policy.src_policy.run_arch:
                     for arch in policy.options.architectures:
                         v = policy.apply_srcarch_policy_impl(pinfo, item, arch, source_t, source_u, excuse)
-                        if v > policy_verdict:
-                            policy_verdict = v
+                        policy_verdict = PolicyVerdict.worst_of(policy_verdict, v)
                 if policy.src_policy.run_src:
                     v = policy.apply_src_policy_impl(pinfo, item, source_t, source_u, excuse)
-                    if v > policy_verdict:
-                        policy_verdict = v
+                    policy_verdict = PolicyVerdict.worst_of(policy_verdict, v)
             # The base policy provides this field, so the subclass should leave it blank
             assert 'verdict' not in pinfo
             if policy_verdict != PolicyVerdict.NOT_APPLICABLE:
                 excuse.policy_info[policy.policy_id] = pinfo
                 pinfo['verdict'] = policy_verdict.name
-                if policy_verdict > excuse_verdict:
-                    excuse_verdict = policy_verdict
+                excuse_verdict = PolicyVerdict.worst_of(policy_verdict, excuse_verdict)
         excuse.policy_verdict = excuse_verdict
 
     def apply_srcarch_policies(self, item, arch, source_t, source_u, excuse):
@@ -74,8 +71,7 @@ class PolicyEngine(object):
             pinfo = {}
             if suite_class in policy.applicable_suites:
                 policy_verdict = policy.apply_srcarch_policy_impl(pinfo, item, arch, source_t, source_u, excuse)
-                if policy_verdict > excuse_verdict:
-                    excuse_verdict = policy_verdict
+                excuse_verdict = PolicyVerdict.worst_of(policy_verdict, excuse_verdict)
                 # The base policy provides this field, so the subclass should leave it blank
                 assert 'verdict' not in pinfo
                 if policy_verdict != PolicyVerdict.NOT_APPLICABLE:
@@ -632,11 +628,13 @@ class RCBugPolicy(BasePolicy):
 
         if new_bugs:
             verdict = PolicyVerdict.REJECTED_PERMANENTLY
-            excuse.add_verdict_info(verdict, "Updating %s introduces new bugs: %s" % (source_name, ", ".join(
+            excuse.add_verdict_info(verdict, "Updating %s would introduce bugs in %s: %s" % (
+              source_name, self.suite_info.target_suite.name, ", ".join(
                 ["<a href=\"https://bugs.debian.org/%s\">#%s</a>" % (quote(a), a) for a in new_bugs])))
 
         if old_bugs:
-            excuse.addinfo("Updating %s fixes old bugs: %s" % (source_name, ", ".join(
+            excuse.addinfo("Updating %s will fix bugs in %s: %s" % (
+              source_name, self.suite_info.target_suite.name, ", ".join(
                 ["<a href=\"https://bugs.debian.org/%s\">#%s</a>" % (quote(a), a) for a in old_bugs])))
 
         return verdict
@@ -808,9 +806,7 @@ class DependsPolicy(BasePolicy):
             # we don't check these in the policy (TODO - for now?)
             return verdict
 
-        source_name = item.package
         source_suite = item.suite
-        s_source = source_suite.sources[source_name]
         target_suite = self.suite_info.target_suite
 
         packages_s_a = source_suite.binaries[arch]
@@ -938,16 +934,14 @@ class BuildDependsPolicy(BasePolicy):
             v = self._check_build_deps(deps, DependencyType.BUILD_DEPENDS, build_deps_info, item,
                                        source_data_tdist, source_data_srcdist, excuse,
                                        get_dependency_solvers=get_dependency_solvers)
-            if verdict < v:
-                verdict = v
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         ideps = source_data_srcdist.build_deps_indep
         if ideps:
             v = self._check_build_deps(ideps, DependencyType.BUILD_DEPENDS_INDEP, build_deps_info, item,
                                        source_data_tdist, source_data_srcdist, excuse,
                                        get_dependency_solvers=get_dependency_solvers)
-            if verdict < v:
-                verdict = v
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         return verdict
 
@@ -968,19 +962,14 @@ class BuildDependsPolicy(BasePolicy):
         if arch in blockers:
             packages = blockers[arch]
 
-            sources_t = target_suite.sources
-            sources_s = source_suite.sources
-
             # for the solving packages, update the excuse to add the dependencies
             for p in packages:
                 if arch not in self.options.break_arches:
                     spec = DependencySpec(dep_type, arch)
                     excuse.add_package_depends(spec, {p})
 
-        if arch in results:
-            if results[arch] == BuildDepResult.FAILED:
-                if verdict < PolicyVerdict.REJECTED_PERMANENTLY:
-                    verdict = PolicyVerdict.REJECTED_PERMANENTLY
+        if arch in results and results[arch] == BuildDepResult.FAILED:
+            verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.REJECTED_PERMANENTLY)
 
         if arch in excuses_info:
             for excuse_text in excuses_info[arch]:
@@ -1139,8 +1128,6 @@ class BuiltUsingPolicy(BasePolicy):
         target_suite = self.suite_info.target_suite
         binaries_s = source_suite.binaries
 
-        sources_t = target_suite.sources
-
         def check_bu_in_suite(bu_source, bu_version, source_suite):
             found = False
             if bu_source not in source_suite.sources:
@@ -1188,8 +1175,7 @@ class BuiltUsingPolicy(BasePolicy):
                         excuse.add_detailed_info("Ignoring unsatisfiable Built-Using for %s/%s on %s %s" % (
                             pkg_name, arch, bu_source, bu_version))
                     else:
-                        if verdict < PolicyVerdict.REJECTED_PERMANENTLY:
-                            verdict = PolicyVerdict.REJECTED_PERMANENTLY
+                        verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.REJECTED_PERMANENTLY)
                         excuse.add_verdict_info(verdict, "%s/%s has unsatisfiable Built-Using on %s %s" % (
                             pkg_name, arch, bu_source, bu_version))
 
@@ -1420,7 +1406,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
                     buildd_ok = True
                 uid = signer['uid']
                 uidinfo = "arch %s binaries uploaded by %s" % (pkg_arch, uid)
-            except KeyError as e:
+            except KeyError:
                 self.logger.info("signer info for %s %s (%s) on %s not found " % (pkg_name, binary_u.version, pkg_arch, arch))
                 uidinfo = "upload info for arch %s binaries not found" % (pkg_arch)
                 failure_verdict = PolicyVerdict.REJECTED_CANNOT_DETERMINE_IF_PERMANENT
@@ -1433,8 +1419,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
                     allow_hints = self.hints.search('allow-archall-maintainer-upload', package=item.package)
                     if allow_hints:
                         buildd_ok = True
-                        if verdict < PolicyVerdict.PASS_HINTED:
-                            verdict = PolicyVerdict.PASS_HINTED
+                        verdict = PolicyVerdict.worst_of(verdict, PolicyVerdict.PASS_HINTED)
                         if pkg_arch not in buildd_info["signed-by"]:
                             excuse.addinfo("%s, but whitelisted by %s" % (uidinfo, allow_hints[0].user))
             if not buildd_ok:
@@ -1458,7 +1443,7 @@ class BuiltOnBuilddPolicy(BasePolicy):
         self.logger.info("Loading signer info from %s", filename)
         with open(filename) as fd:
             if os.fstat(fd.fileno()).st_size < 1:
-                return singerinfo
+                return signerinfo
             signerinfo = json.load(fd)
 
         return signerinfo
@@ -1714,7 +1699,6 @@ class ImplicitDependencyPolicy(BasePolicy):
         source_suite = item.suite
         source_name = item.package
         target_suite = self.suite_info.target_suite
-        sources_t = target_suite.sources
         all_binaries = self._all_binaries
 
         # we check all binaries for this excuse that are currently in testing
@@ -1764,10 +1748,17 @@ class ImplicitDependencyPolicy(BasePolicy):
                 # to check it
                 continue
 
-            v = self.check_upgrade(pkg_id_t, pkg_id_s, source_name, myarch, broken_binaries, excuse)
+            if not pkg_id_s and \
+                    source_data_tdist.version == source_data_srcdist.version and \
+                    source_suite.suite_class == SuiteClass.ADDITIONAL_SOURCE_SUITE and \
+                    binaries_t_a[mypkg].architecture == 'all':
+                # we're very probably migrating a binNMU built in tpu where the arch:all
+                # binaries were not copied to it as that's not needed. This policy could
+                # needlessly block.
+                continue
 
-            if v > verdict:
-                verdict = v
+            v = self.check_upgrade(pkg_id_t, pkg_id_s, source_name, myarch, broken_binaries, excuse)
+            verdict = PolicyVerdict.worst_of(verdict, v)
 
         # each arch is processed separately, so if we already have info from
         # other archs, we need to merge the info from this arch

@@ -142,3 +142,12 @@ ADT_IGNORE_FAILURE_FOR_NEW_TESTS = 0
 # Enforce Built-Using relationships are satisfied in the target suite (enabled
 # by default)
 # BUILT_USING_POLICY_ENABLE = yes
+
+# Enable the piuparts policy (enabled by default)
+# PIUPARTS_ENABLE = yes
+
+# Enable the age policy (enabled by default)
+# AGE_ENABLE = yes
+
+# Enable the rc-bug policy (enabled by default)
+# RCBUG_ENABLE = yes

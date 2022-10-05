@@ -66,8 +66,6 @@ class ConsoleUtils(object):
         real_version = package_version
         if package_version is None or package_version not in unique_versions:
             if not fuzzy_match_version:
-                if unique_versions is None:
-                    raise ValueError("unique_versions cannot be None when fuzzy_match_version is False")
                 raise ValueError("Unknown version %s, valid options are: %s" % (
                     package_version, sorted(unique_versions)))
             real_version = fuzzy_match(package_architecture, unique_versions, 'package_version')
