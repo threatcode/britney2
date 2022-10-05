@@ -1,164 +1,163 @@
-# Synchonized with https://release.debian.org/britney/hints/elbrus on 2020-04-10
-
-#### Blaclisted
-
-# 20200326
-# 954655
-force-badtest apparmor/all
-
-# 20191129
-# blacklisted
-force-badtest auto-multiple-choice/all/arm64
-force-badtest auto-multiple-choice/all/ppc64el
-
-# 20200402
-# 953939
-force-badtest bamtools/all/arm64
-
-# 20191214
-force-badtest cyrus-imapd/all/arm64
-
-# 20200322
-force-badtest debci/all/arm64
-
-# 20190212
-# 921566 blacklisted
-force-badtest deepnano/all
-
-# 20200402
-# 954103
-force-badtest dlm/all/arm64
-force-badtest dlm/all/ppc64el
-
-# 20191214
-force-badtest nftables/all/amd64
-
-# 20191212
-# 946624 blacklisted
-force-badtest python-scipy/all
-
-# 20191212
-# 946625 blacklisted
-force-badtest scipy/all
-
-# 20190905
-# 939058 blacklisted
-force-badtest subnetcalc/all
-
-# 20190715
-# blacklisted
-force-badtest openjdk-11/all
-force-badtest openjdk-13/all
-force-badtest openjdk-14/all
-
-# 20190212
-# 914336 blacklisted
-force-badtest netperfmeter/all
-
-
-#### Fails in migration setup
-
-
-
-#### Flaky
-# Other potentially flaky packages:
-# gitaly tor gnuplot-iostream wacomtablet onioncircuits apt haveged kwidgetsaddons zodb monkeysign fdroidserver postorius schleuder mmdebstrap xpapers link-grammar python-pyepsg (crawling website) dovecot debuerreotype (snapshot) enigmail python-3.8
-# (from glibc 2019-03-01) colord python-crypto timew wcc
-# (from glibc 2019-11-01) boost1.67
-# (from glibc 2020-01-01) pinentry
-# OPU
-# PU arm64
-# glibc (1x time out)
-# limnoria (2019-12-09 retriggered; time out + disk i/o error)
-# baloo-widgets (2019-12-10 retriggered; time out)
-# bluez-qt (2020-02-20 retriggerd; bug failed before)
-# PU ppc64el
-# resource-agents (2020-02-20 retriggered)
-
-# 20200407
-# rabbitmq-server is flaky to install
-force-badtest mcollective/all/arm64
-
-# 20200404
-# 955772 flaky
-force-badtest dask.distributed/all
-
-# 20200329
-# 946104 flaky
-force-badtest rtkit/all
-
-# 20200310
-# flaky
-force-badtest dovecot/all/arm64
-
-# 20200224
-# 952463 flaky
-force-badtest bagel/all/arm64
-
-# 20191015
-# 942404 flaky
+# Synchronized with https://release.debian.org/britney/hints/elbrus on 2022-10-05
+# using the script kali-sync-badtests.sh.
+force-badtest apache2/2.4.38-3+deb10u7
+force-badtest apache2/2.4.38-3+deb10u8
+force-badtest awesome/all
+force-badtest ayatana-indicator-session/all
+force-badtest baloo-kf5/5.54.0-1
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u2
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u3
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u5
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u6
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u7
+force-badtest bind9/1:9.11.5.P4+dfsg-5.1+deb10u8
+force-badtest boost1.67/all/amd64
+force-badtest booth/1.0-162-g27f917f-2
+force-badtest cluster-glue/1.0.12-12
+force-badtest combblas/1.6.2-3
+force-badtest dask.distributed/1.25.0+ds.1-1
+force-badtest datefudge/1.24
+force-badtest dbus-test-runner/all
+force-badtest dbus-test-runner/all/armhf
+force-badtest debci/2.0
 force-badtest discosnp/2.3.0-2
-
-# 20191010
-# 942093 flaky
-force-badtest libdbd-mysql-perl/4.050-2
-
-# 20190822
-# 935413 flaky (also in buster)
-force-badtest ruby2.5/all
-
-# 20190422
-# 927761 flaky
-force-badtest fclib/all
-
-# 20190329
-# 925985 flaky
+force-badtest dogtag-pki/all
+force-badtest dolfin/2018.1.0.post1-16
+force-badtest dovecot/2.4.38-3+deb10u4
+force-badtest dxvk/all/armel
+force-badtest dxvk/all/armhf
+force-badtest dxvk/all/ppc64el
+force-badtest dxvk/all/s390x
+force-badtest ganeti/2.15.2-7+deb9u3
+force-badtest ganeti/2.16.0-5
+force-badtest glibc/all/armel
+force-badtest gnupg2/2.2.12-1
+force-badtest gnuplot-iostream/0~20140302.gitc8919a0+dfsg-3
+force-badtest golang-github-bmatsuo-lmdb-go/1.8.0+git20170215.a14b5a3-2/s390x
+force-badtest golang-github-bmatsuo-lmdb-go/all/s390x
+force-badtest grr/all
+force-badtest gscan2pdf/2.11.0-1
+force-badtest gyoto/1.3.1-1
+force-badtest hg-git/0.8.12-1
+force-badtest hypre/2.11.1-3
+force-badtest hypre/2.15.1-5
 force-badtest jsurf-alggeo/all
-
-# 20190327
-# 925879 flaky
-force-badtest reprotest/all
-
-# 20181207
-# 906694 KDE stack & flaky
-force-badtest kwin/all
-
-# 20190126
-# 920546 flaky
-force-badtest dolfin/all
-
-# 20181205
-# 915613 flaky
-force-badtest libksysguard/all
-
-# 20181125
-# 910104 regularly times out, although much less lately
-force-badtest hypre/all
-
-# 20181123
-# 914477 flaky
-force-badtest rspamd/all
- 
-# 20180724
-# 904452 flaky
+force-badtest kate4/all
+force-badtest kdebugsettings/18.04.1-1/ppc64el
+force-badtest kodi/2:17.6+dfsg1-4/ppc64el
+force-badtest konclude/all/s390x
+force-badtest kopanocore/8.7.0-3
+force-badtest kore/4.1.0-3
+force-badtest kwayland/4:5.28.0-1
+force-badtest kwayland/4:5.54.0-1
+force-badtest libaperture-0/0.1.0+git20200908-3
+force-badtest libdbd-mysql-perl/4.050-2
+force-badtest libflame/all/amd64
+force-badtest libflame/all/arm64
+force-badtest libflame/all/armel
+force-badtest libflame/all/i386
+force-badtest libflame/all/s390x
+force-badtest libio-pty-perl/1:1.15-2/armhf
+force-badtest libksysguard/4:5.14.3-1
+force-badtest libksysguard/4:5.14.5-1
+force-badtest libpqtypes/1.5.1-7/arm64
+force-badtest libpqtypes/all/arm64
+force-badtest libreoffice/1:5.2.7-1+deb9u10/ppc64el
+force-badtest libreoffice/1:5.2.7-1+deb9u11/ppc64el
+force-badtest libreoffice/1:5.2.7-1+deb9u12/ppc64el
+force-badtest libreoffice/1:6.1.5-3+deb10u5/ppc64el
+force-badtest libreoffice/1:6.1.5-3+deb10u6/ppc64el
+force-badtest libreoffice/all/armel
+force-badtest libreoffice/all/armhf
+force-badtest libreoffice/all/i386
+force-badtest libreoffice/all/ppc64el
+force-badtest libreoffice/all/s390x
+force-badtest libthrust/all/amd64
+force-badtest libvirt/5.0.0-4+deb10u1/i386
+force-badtest llvm-toolchain-11/1:11.0.1-2~deb10u1
+force-badtest llvm-toolchain-11/all/armel
+force-badtest llvm-toolchain-11/all/armhf
+force-badtest llvm-toolchain-11/all/ppc64el
+force-badtest llvm-toolchain-12/all/armhf
+force-badtest llvm-toolchain-12/all/ppc64el
+force-badtest llvm-toolchain-13/all/armel
+force-badtest llvm-toolchain-13/all/armhf
+force-badtest llvm-toolchain-13/all/ppc64el
+force-badtest llvm-toolchain-14/all/armel
+force-badtest llvm-toolchain-9/all/ppc64el
+force-badtest meson/all/armhf
+force-badtest netplan.io/0.95-2
+force-badtest nvidia-cuda-toolkit/11.2.2-3+deb11u1/ppc64el
+force-badtest nvidia-graphics-drivers-legacy-390xx/390.151-1~deb10u1
+force-badtest octave-sparsersb/1.0.8-3/armhf
+force-badtest openmsx-catapult/18.0-1
+force-badtest openvpn-auth-ldap/2.0.4-1
 force-badtest pango1.0/all
-
-# 20180709
-# 903374 flaky
+force-badtest pdns-recursor/all/ppc64el
+force-badtest pdns/4.1.6-3
+force-badtest pdns/all/ppc64el
+force-badtest petsc/3.10.3+dfsg1-5
+force-badtest petsc4py/3.10.1-1
+force-badtest pglogical/2.2.1-4
+force-badtest php-easyrdf/all
+force-badtest plasma-framework/5.28.0-2
+force-badtest plasma-framework/5.54.0-1
+force-badtest plinth/19.1/ppc64el
+force-badtest polyml/5.7.1-2
+force-badtest prometheus/2.7.1+ds-3/amd64
+force-badtest puma/5.5.2-2
+force-badtest purpose/5.54.0-1
+force-badtest pyagentx/0.4.1-6
+force-badtest python-tesserocr/all/arm64
+force-badtest python-tesserocr/all/ppc64el
+force-badtest qbzr/all
+force-badtest rails/2:6.1.4.6+dfsg-3
+force-badtest reprotest/all
+force-badtest ros-robot-state-publisher/1.13.6-7
+force-badtest rspamd/1.8.1-2
+force-badtest rtkit/0.11-4+deb9u1
+force-badtest rtkit/0.11-6
+force-badtest ruby-moneta/1.0.0-5/ppc64el
+force-badtest ruby2.5/2.5.5-3
+force-badtest ruby2.5/all
+force-badtest ruby2.7/all
+force-badtest salt/2018.3.4+dfsg1-6+deb10u3
+force-badtest scapy/2.4.4-4
+force-badtest silx/all/armhf
+force-badtest skimage/all/armhf
+force-badtest slepc4py/3.10.0-2
+force-badtest slurm-wlm/20.11.7+really20.11.4-2
+force-badtest slurm-wlm/all/armel
+force-badtest slurm-wlm/all/armhf
+force-badtest slurm-wlm/all/i386
+force-badtest snapd-glib/all/s390x
+force-badtest sonic-pi/all/arm64
+force-badtest sonic-pi/all/armhf
+force-badtest starlet/0.31-1.1/armhf
+force-badtest strongswan/5.7.1-1
+force-badtest strongswan/5.7.2-1
+force-badtest strongswan/5.7.2-1+deb10u2
+force-badtest suricata/1:4.1.2-2
+force-badtest suricata/1:4.1.2-2+deb10u1
+force-badtest syslog-ng/3.8.1-10
+force-badtest systemd/241-7~deb10u5
+force-badtest thunderbird/1:60.8.0-1~deb9u1/ppc64el
+force-badtest thunderbird/1:60.9.0-1~deb10u1/ppc64el
+force-badtest thunderbird/1:60.9.0-1~deb10u2/ppc64el
+force-badtest thunderbird/1:68.2.2-1~deb9u1/ppc64el
+force-badtest thunderbird/1:68.2.2-1~deb9u1/ppc64el
+force-badtest thunderbird/all/ppc64el
 force-badtest tracker/all
-
-# 20180708
-# 903314 flaky
-force-badtest kwayland/all
-
-# 20180702
-# 902850 flaky
-force-badtest plasma-framework/all
-
-# 20180702
-# 902844 flaky
-force-badtest baloo-kf5/all
-
-# 20180430
-# 897236 flaky
-force-badtest yorick/all
+force-badtest trinityrnaseq/all
+force-badtest unattended-upgrades/1.11.2
+force-badtest unattended-upgrades/2.8
+force-badtest v4l2loopback/0.12.1-1
+force-badtest x11vnc/all
+force-badtest xmds2/all/amd64
+force-badtest xpra/2.4.3+dfsg1-1/armel
+force-badtest xpra/2.4.3+dfsg1-1/armhf
+force-badtest xpra/2.4.3+dfsg1-1/ppc64el
+force-badtest xpra/2.4.3+dfsg1-1/s390x
+force-badtest yorick/2.2.04+dfsg1-10
+force-badtest yorick/2.2.04+dfsg1-9
+force-badtest zfs-linux/0.7.12-2+deb10u2
