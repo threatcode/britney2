@@ -9,10 +9,19 @@
 # This one should be unblocked after we have rebuilt all packages against
 # the new ruby version (when applicable)
 block ruby-defaults
-
 # This one is to manage the rebuild of debian-installer and netboot/mini.iso
 # images when there is a new libc*-udeb (when major updates)
 block glibc
+
+# this one is to manage properly the Gnome transition. The migration in Debian
+# Testing is not correctly managed and it regularly breaks kali-rolling. Keep
+# this forever. Unlock when Daniel is OK
+block gnome-shell
+block gnome-control-center
+
+# This one is to block unstable packages until they are OK to enter in kali-rolling
+# tools are not yet stable
+block fudgec2
 
 # In this file you can put hints to convince britney to migrate some
 # packages even though it might break some other packages, such hints
@@ -31,9 +40,546 @@ block glibc
 # with other possible updates, thus possibly improving your initial hint.
 # hint syslog-ng/3.5.6-2 syslog-ng-incubator/0.3.3-2
 
+# force-badtest hints tell britney to ignore autopkgtest regressions in the
+# source package but not the autopkgtest regressions on reverse dependencies
+# force-badtest protobuf/3.11.4-3
 
+# force-skiptest hints tells Britney to ignore autopkgtests of the reverse
+# dependencies and to try migration
+# force-skiptest ruby2.7/2.7.1-3
+
+# Remove a package that we don't want (temporarily broken for example)
+# remove secure-socket-funneling/3.0.0-0kali3 boost1.62/1.62.0+dfsg-10 
+
+# Allow some binary packages to become uninstallable
+# allow-uninst libboost-mpi-python1.62-dev foo/amd64
+
+# Allow some source packages to retain old binaries in kali-rolling
+# allow-smooth-update sortedcontainers/2.1.0-1
+
+# 2022-10-04 - sagemath blocks a bunch of packages
+force-badtest sagemath/9.5-4
+
+# ----------- #
 finished
+# ----------- #
+
+# 2022-10-04
+force-badtest hosthunter/1.6-0kali1
+# 2022-10-04 - help gcc-12
+# * dpdk/21.11-5: some tests tend to timeout, both on Debian and Kali. Reported in #1021231.
+# * sagemath/9.5-4: never seems to pass in Kali anyway, although it does pass in Debian.
+# * squid/5.6-1: fails consistently in Debian and in Kali.
+force-skiptest gcc-12/12.2.0-3
+# 2022-10-04 - circular dep between libnginx-mod-http-lua and lua-resty-core
+# causes britney to crash with RecursionError, cf. #1010660
+easy libnginx-mod-http-lua/1:0.10.22-2 lua-resty-core/0.1.24-2 nginx/1.22.0-3
+force-badtest squid/5.6-1
+# 2022-09-27
+force-skiptest gnome-shell/43.0-1
+unblock gnome-shell/43.0-1
+# 2022-09-15
+force-skiptest gcc-defaults/1.201 mercurial/6.2.2-1 glib2.0/2.73.3-3 gettext/0.21-9 adduser/3.129
+force-skiptest draco/1.5.3+dfsg-2 systemd/251.4-3 
+# 2022-09-07
+force-skiptest linux/5.18.16-1kali1
+# 2022-08-31
+unblock ruby-defaults/1:3.0+1kali2
+force-skiptest ruby-defaults/1:3.0+1kali2
+force-skiptest r-base/4.2.1-2
+# 2022-08-30
+remove ruby2.7/2.7.4-1
+force-skiptest nodejs/18.7.0+dfsg-1
+force-skiptest glibc/2.34-4 gcc-12/12.2.0-1
+force-hint glibc/2.34-4
+unblock glibc/2.34-4
+# 2022-08-29
+remove zeek/3.2.3+ds2-2
+# 2022-08-02 - unrelated ruby2.7 failures
+force-skiptest libyaml/0.2.5-1
+force-skiptest libxcrypt/1:4.4.28-2
+# 2022-07-26 - too many tests
+force-skiptest init-system-helpers/1.64+kali2
+# 2022-07-26 - fails due to psmisc >= 23.5-1 running on kernel < 5.1,
+# will be fixed in psmisc 23.5-3, cf. #1015228.
+force-badtest nut/2.7.4-14
+force-badtest balsa/2.6.3-1
+# 2022-07-26
+unblock glibc/2.33-8
+force-skiptest glibc/2.33-8
+force-skiptest python-igraph/0.9.11-1 pillow/9.2.0-1 lru-dict/1.1.8-3
+force-skiptest openssl/3.0.4-2
+force-badtest stunnel4/3:5.63-1
+force-skiptest gcc-12/12.1.0-7
+force-skiptest binutils/2.38.90.20220713-2
+force-badtest mystiq/20.03.23-3
+force-skiptest perl/5.34.0-5
+force-skiptest python3-defaults/3.10.5-3
+force-badtest sagemath/9.5-4
+force-badtest gyoto/1.4.4-7
+force-badtest nbconvert/6.4.4-1
+force-badtest php-horde-date/2.4.1-8  php-horde-itip/2.1.2-8 php-horde-timezone/1.1.0-7 php-horde-kolab-session/2.0.3-9 php-horde-kolab-storage/2.2.4-2 php-horde-date-parser/2.0.7-2 php-horde-icalendar/2.1.8-5 php-horde-service-weather/2.5.5-2 php-horde-perms/2.1.8-4 php-horde-rdo/2.1.0-8 php-horde-itip/2.1.2-8 php-horde-mail/2.6.5-5 php-horde-mime/2.11.2-1 php-horde-token/2.0.9-8 php-horde-hashtable/1.2.6-11 php-horde-smtp/1.9.6-2 php-horde-image/2.6.1-2 php-horde-mail/2.6.6-2 php-horde-imap-client/2.30.4-1 php-horde-mail-autoconfig/1.0.3-10
+force-badtest r-cran-parameters/0.18.1-1
+force-skiptest python-ldap/3.4.0-2
+# 2022-07-19
+force-skiptest linux/5.18.5-1kali6
+# 2022-07-07
+force-skiptest gnutls28/3.7.6-2
+force-skiptest ffmpeg/7:5.0.1-3
+force-skiptest tesseract/5.1.0-2
+force-skiptest onetbb/2021.5.0-12
+# 2022-07-05
+force-skiptest linux/5.18.5-1kali5
+# 2022-06-22
+force-skiptest linux/5.18.5-1kali1
+force-skiptest openssl/3.0.3-8
+# 2022-06-06
+force-skiptest linux/5.17.11-1kali1
+# 2022-05-16
+force-skiptest nodejs/16.14.2+dfsg1-1
+# 2022-05-10
+force-skiptest openssl/1.1.1o-1
+# 2022-05-05
+urgent bluez/5.64-2+kali1
+# 2022-04-27
+force-skiptest python3-defaults/3.10.4-1
+easy python3-defaults/3.10.4-1 virtualbox/6.1.34-dfsg-2 winexe/1.1~20140107-0kali14 samba/2:4.16.0+dfsg-7
+# 2022-04-12
+force-skiptest nodejs/16.13.2+really14.19.1~dfsg-6
+force-skiptest google-glog/0.6.0-1
+# 2022-04-11
+force-skiptest linux/5.16.18-1kali1
+# 2022-03-28
+force-skiptest linux/5.16.14-1kali2
+# 2022-03-24
+unblock ruby-defaults/1:3.0+1kali1
+force-skiptest ruby-defaults/1:3.0+1kali1
+force-badtest ruby-fxruby/1.6.44-0kali1
+# 2022-03-18
+# hint from Debian
+force-skiptest gcc-12/12-20220313-1
+# 2022-03-16
+force-skiptest linux/5.16.12-1kali1
+# 2022-03-08
+force-skiptest linux/5.16.11-1kali1
+# 2022-02-21
+unblock glibc/2.33-6
+force-skiptest glibc/2.33-6
+force-skiptest linux/5.16.7-2kali1
+# perl transition imported from Debian
+force-skiptest perl/5.34.0-3
+urgent ifeffit/2:1.2.11d-12
+urgent libdbd-oracle-perl/1.80-3
+urgent kamailio/5.5.3-2
+urgent pcp/5.3.6-1
+urgent libdevel-nytprof-perl/6.11+dfsg-3
+urgent libfuture-io-perl/0.11-2
+urgent libxml-libxml-perl/2.0207+dfsg+really+2.0134-1
+force-skiptest libxml-libxml-perl/2.0207+dfsg+really+2.0134-1
+urgent libio-async-perl/0.801-2
+force-skiptest libgd-perl/2.76-2
+# 2022-02-17
+# https://bugs.debian.org/1005905 (binutils). We don't care about php-imagick.
+force-badtest binutils/2.38-1 php-imagick/3.6.0-4
+# 2022-02-09
+# ocaml transition from Debian
+urgent llvm-toolchain-11/1:11.1.0-6
+urgent llvm-toolchain-12/1:12.0.1-19
+urgent ocaml-migrate-parsetree/2.3.0-2
+urgent libguestfs/1:1.46.2-11
+force-skiptest ocaml/4.13.1-3 llvm-toolchain-12/1:12.0.1-19 libguestfs/1:1.46.2-11
+remove ppx-tools-versioned/5.4.0-1
+# 2022-02-01
+force-skiptest linux/5.15.15-2kali1
+# 2022-01-28
+# help ldc reverse dependencies migrate
+easy appstream-generator/0.8.6-2 glib-d/2.3.0-2
+easy appstream-generator/0.8.6-2 mir-core/1.0.2-1 glib-d/2.3.0-2
+easy appstream-generator/0.8.6-2 stdx-allocator/3.1.0~beta.2-3 mir-core/1.0.2-1 glib-d/2.3.0-2
+force-skiptest linux/5.15.15-1kali2
+# 2022-01-26
+urgent policykit-1/0.105-31.1+kali1
+# 2022-01-19
+urgent alsa-lib/1.2.6.1-1
+# 2022-01-11
+force-skiptest python-click/8.0.3-1
+urgent alsa-lib/1.2.5.1-2~kali1
+# 2021-12-29
+force-skiptest python-aiohttp/3.8.1-4
+force-skiptest linux/5.15.5-2kali2
+force virtualbox/6.1.30-dfsg-1
+# 2021-12-22
+unblock glibc/2.33-1
+force-skiptest glibc/2.33-1
+# 2021-12-17
+force-badtest libjsoncpp/1.9.5-2
+force-skiptest ruby-defaults/2.7.6
+unblock ruby-defaults/2.7.6
+force-skiptest ocaml-ctypes/0.19.1-1
+force-badtest silx/all
+urgent r-bioc-scuttle/1.4.0+dfsg-3
+urgent r-bioc-biocparallel/1.28.2-2
+urgent gsl/2.7.1+dfsg-3
+urgent nco/5.0.4-1
+force-skiptest gsl/2.7.1+dfsg-3
+# 2021-12-14
+urgent pocl/1.8-2
+# 2021-11-18
+force-skiptest kali-defaults/2021.4.5
+# 2021-11-15
+force-skiptest linux/5.14.16-1kali1
+# 2021-11-04
+force-badtest python-faraday/3.17.1-0kali2
+force-skiptest postgresql-common/231
+# 2021-10-27
+unblock gnome-shell/41.0-2 
+unblock nmap
+# 2021-10-21
+force-skiptest kali-defaults/2021.4.2
+# 2021-10-18 Try to cleanup a bit, r-bioc is stuck,
+# cherry-pick from https://release.debian.org/britney/hints/sramacher
+force-skiptest r-bioc-s4vectors/0.30.2-1
+force-skiptest r-bioc-rhdf5filters/1.4.0+dfsg-2
+force-badtest r-bioc-annotationfilter/1.14.0+dfsg-1
+force-badtest r-bioc-beachmat/2.6.4+ds-1
+force-badtest r-bioc-bioccheck/1.26.0+dfsg-1
+force-badtest r-bioc-biocneighbors/1.8.2+ds-1
+force-badtest r-bioc-biocsingular/1.6.0+ds-1
+force-badtest r-bioc-bluster/1.0.0+dfsg-2
+force-badtest r-bioc-delayedmatrixstats/1.12.3+ds-1
+force-badtest r-bioc-dropletutils/1.10.3+ds-2
+force-badtest r-bioc-genomicfiles/1.26.0-1
+force-badtest r-bioc-genomicranges/1.44.0+dfsg-1
+force-badtest r-bioc-geoquery/2.58.0+dfsg-2
+force-badtest r-bioc-glmgampoi/1.2.0+dfsg-6
+force-badtest r-bioc-gosemsim/2.16.1-1
+force-badtest r-bioc-ihw/1.18.0+dfsg-1
+force-badtest r-bioc-matrixgenerics/1.2.1-4
+force-badtest r-bioc-metagenomeseq/1.32.0-1
+force-badtest r-bioc-multiassayexperiment/1.16.0+dfsg-1
+force-badtest r-bioc-mutationalpatterns/3.0.1+dfsg-2
+force-badtest r-bioc-org.hs.eg.db/3.12.0-1
+force-badtest r-bioc-phyloseq/1.34.0+dfsg-1
+force-badtest r-bioc-purecn/1.20.0+dfsg-3
+force-badtest r-bioc-pwmenrich/4.26.0-1
+force-badtest r-bioc-rhdf5/2.34.0+dfsg-1
+force-badtest r-bioc-rhdf5lib/1.12.1+dfsg-3
+force-badtest r-bioc-rots/1.18.0-1
+force-badtest r-bioc-scran/1.18.5+dfsg-1
+force-badtest r-bioc-scuttle/1.0.4+dfsg-5
+force-badtest r-bioc-singlecellexperiment/1.12.0+ds-1
+force-badtest r-bioc-singler/1.4.1+ds-1
+force-badtest r-bioc-sva/3.38.0-1
+force-badtest pytables/3.6.1-3
+# 2021-10-18
+force-skiptest linux/5.14.9-2kali1
+force-skiptest gcc-11/11.2.0-9
+remove gnome-shell-extension-desktop-icons/20.04.0+git20200908-8
+remove gnome-shell-extension-workspaces-to-dock/54-0kali1
+force-skiptest pyyaml/5.4.1-1
+force-skiptest theharvester/4.0.1-0kali1
+# 2021-10-01
+force-skiptest kali-defaults/2021.4.0
+# 2021-09-29 - glibc transition
+unblock glibc/2.32-4
+force-skiptest glibc/2.32-4
+easy glibc/2.32-4 apitrace/amd64/9.0+repack-1 apitrace/arm64/9.0+repack-1 apitrace/armel/9.0+repack-1 apitrace/armhf/9.0+repack-1 apitrace/i386/9.0+repack-1 dante/amd64/1.4.2+dfsg-7 dante/arm64/1.4.2+dfsg-7 dante/armel/1.4.2+dfsg-7 dante/armhf/1.4.2+dfsg-7 dante/i386/1.4.2+dfsg-7 libnih/amd64/1.0.3-12 libnih/arm64/1.0.3-12 libnih/armel/1.0.3-12 libnih/armhf/1.0.3-12 libnih/i386/1.0.3-12 libnss-db/amd64/2.2.3pre1-6 libnss-db/arm64/2.2.3pre1-6 libnss-db/armel/2.2.3pre1-6 libnss-db/armhf/2.2.3pre1-6 libnss-db/i386/2.2.3pre1-6 nvidia-cuda-toolkit/11.3.1-4 unscd/amd64/0.54-1 unscd/arm64/0.54-1 unscd/armel/0.54-1 unscd/armhf/0.54-1 unscd/i386/0.54-1 zeek/amd64/3.2.3+ds2-2 zeek/arm64/3.2.3+ds2-2 zeek/armel/3.2.3+ds2-2 zeek/armhf/3.2.3+ds2-2 zeek/i386/3.2.3+ds2-2
+# 2021-09-16
+unblock gnome-shell/3.38.6-1
+# 2021-09-14
+unblock glibc/2.31-17
+force-skiptest python3-stdlib-extensions/3.9.7-1
+force-skiptest python-netaddr/0.8.0-2 uvloop/0.16.0+ds1-1
+# 2021-09-08
+force-skiptest golang-github-klauspost-cpuid/2.0.6-1
+# 2021-08-31
+force-skiptest kali-meta/2021.3.7
+# 2021-08-30
+force-skiptest kali-themes/2021.3.2
+# 2021-08-10
+unblock glibc
+force-skiptest linux/5.10.46-4kali1
+# 2021-07-15
+force-skiptest firefox-esr/78.12.0esr-1
+# 2021-07-07
+force-skiptest curl/7.74.0-1.3
+# 2021-06-29
+force-skiptest linux/5.10.46-1kali1
+# 2021-06-08
+force-skiptest nodejs/12.21.0~dfsg-4
+
 # Old hints that have been applied already
+# 2021-06-02
+force-skiptest linux/5.10.40-1kali1
+unblock glibc/2.31-12
+# 2021-05-05
+unblock glibc/2.31-11
+force-badtest systemd/247.3-3
+force-badtest initramfs-tools/0.140
+# 2021-04-15
+force-skiptest linux/5.10.28-1kali1
+# 2021-04-02
+force-skiptest linux/5.10.26-1kali2
+# 2021-03-26
+force-skiptest linux/5.10.24-1kali1
+# 2021-03-10
+force-skiptest linux/5.10.19-1kali1
+# 2021-03-03
+force-skiptest openssl/1.1.1j-1
+# 2021-02-25
+force-badtest glibc/2.31-9
+# 2021-02-23
+force-badtest ruby-ruby2ruby/2.4.1-2
+# 2021-02-22
+force-badtest astropy/4.2-4
+# 2021-02-16
+force-badtest perl/5.32.1-2
+force-skiptest perl/5.32.1-2
+force-badtest supysonic/0.6.2+ds-1
+# 2021-02-11
+force-badtest initramfs-tools/0.139 pytorch/1.7.1-4 systemd/247.3-1 
+# 2021-02-10
+easy stdx-allocator/amd64/3.1.0~beta.2-3 stdx-allocator/arm64/3.1.0~beta.2-3 stdx-allocator/i386/3.1.0~beta.2-3 mir-core/amd64/1.0.2-1 mir-core/arm64/1.0.2-1 mir-core/i386/1.0.2-1 dcontainers/amd64/0.8.0~alpha.16-1 dcontainers/arm64/0.8.0~alpha.16-1 dcontainers/i386/0.8.0~alpha.16-1
+force-badtest libpod/2.1.1+dfsg1-4 systemd/247.2-5 initramfs-tools/0.139 synthv1/0.9.19-1 elpy/1.34.0-2
+force-skiptest openssl/1.1.1i-3
+# 2021-02-09
+hint rhonabwy/0.9.13-1 iddawc/0.9.8-2 glewlwyd/2.5.2-1
+hint pcmanfm-qt/0.16.0-1 lxqt-qtplugin/0.16.0-1 lximage-qt/0.16.0-1
+force-badtest radicale/3.0.6-1
+force-skiptest ipy/1:1.01-1
+force-skiptest linux/5.10.13-1kali1
+# 2021-02-05
+force-skiptest linux/5.10.12-1kali1
+# 2021-01-28
+force-skiptest gcc-10/10.2.1-6 gcc-defaults/1.190
+unblock glibc/2.31-9
+hint freecad/0.19~pre1+git20210109.afd1470202+dfsg1-2 gmsh/4.7.1+ds1-2 kicad/5.1.9+dfsg1-1 opencascade/7.5.0+dfsg1-3
+hint adabrowse/4.0.3-14 adacontrol/1.21r6b-7 asis/2019-5 dh-ada-library/7.3 gprbuild/2021.0.0.0778b109-5 libaws/20.2-2 libgnatcoll/21.0.0-4 libgnatcoll-bindings/21.0.0-4 libgnatcoll-db/21.0.0-6 liblog4ada/1.3.1.b6dafb49-5 libtemplates-parser/21.0.0-2 libxmlada/21.0.0-4 libxmlezout/1.06.2-4
+# 2021-01-27
+force-skiptest sudo/1.9.5p1-1.1 linux/5.10.9-1kali1
+# 2021-01-26
+force-skiptest nvidia-graphics-drivers/460.32.03-1 nassl/4.0.0-0kali2
+# 2021-01-19
+force-hint python3-stdlib-extensions/3.9.1-2
+# 2021-01-07
+force-skiptest rhonabwy/0.9.13-1
+force-hint plplot/5.15.0+dfsg-19
+force-skiptest umockdev/0.15.4-1 qemu/1:5.2+dfsg-3 requests/2.25.1+dfsg-2 rsyslog/8.2012.0-1 xz-utils/5.2.5-1.0 elfutils/0.182-2 apparmor/2.13.6-3 golang-go.crypto/1:0.0~git20201221.eec23a3-1 golang-golang-x-sys/0.0~git20201223.0d417f6-1 python-tz/2020.5-1 setuptools/51.1.0-1 xclip/0.13-2 gnome-online-accounts/3.38.0-3 libzstd/1.4.8+dfsg-1 libpath-tiny-perl/0.114-2 netcat-openbsd/1.217-3 
+force-badtest clevis/15-4 pytorch/1.7.1-4
+force-skiptest gnutls28/3.7.0-5 ruby-defaults/1:2.7+2 rubygems/3.2.0~rc.2-5 systemd/247.2-4 sphinx/3.4.1-1 iproute2/5.10.0-2 gcc-10/10.2.1-3
+force-skiptest ncurses/6.2+20201114-2 network-manager/1.28.0-2 r-bioc-iranges/2.24.1-1 r-bioc-s4vectors/0.28.1-1 r-cran-bh/1.74.0-1 ruby-pathutil/0.16.1-1.1 strace/5.10-1 golang-github-jackpal-gateway/1.0.7-1
+unblock ruby-defaults/1:2.7+2 glibc
+#2020-12-22
+force-skiptest linux/5.9.15-1kali1
+force-skiptest qtbase-opensource-src/5.15.2+dfsg-2
+#2020-12-14
+force-skiptest libjsoncpp/1.9.4-3 massdns/0.3-0kali2 metasploit-framework/6.0.21-0kali1 httprobe/0.1.2+git20200411-0kali1
+# 2020-12-08
+force-skiptest more-termcolor/1.1.3+git20201020-0kali1 wordlistraider/1.0~git20200927-0kali1
+force-skiptest sqlmap/1.4.12-1 aircrack-ng/1:1.6+git20201206.8259703-1 hwloc/2.4.0+dfsg-2 
+force-skiptest gcc-10/10.2.0-19 xcb-util/0.4.0-1 glibc/2.31-5
+force-hint python3-defaults/3.9.0-4 linux/5.9.11-1kali1 perl/5.32.0-5
+force-skiptest aircrack-ng/1:1.6+git20201206.8259703-1 linux/5.9.11-1kali1 libapache2-mod-perl2/2.0.11-3 perl/5.32.0-5 libpar-packer-perl/1.051-1 libio-aio-perl/4.73-1 libcbor-xs-perl/1.82-1 libre-engine-re2-perl/0.13-5 re2/20201101+dfsg-2 python3-defaults/3.9.0-4 libencode-perl/3.08-1 ceph/14.2.15-3 cyrus-imapd/3.2.5-1 zbar/0.23.1-3 jellyfish/2.3.0-8 mapserver/7.6.1-1 openscap/1.2.17-0.1 openbabel/3.1.1+dfsg-3 libxml-parser-perl/2.46-2 kitty/0.19.2-1 fontforge/1:20201107~dfsg-2 caffe/1.0.0+git20180821.99bd997-8 samba/2:4.13.2+dfsg-3 netgen/6.2.2006+really6.2.1905+dfsg-1 createrepo-c/0.16.2-1 borgbackup/1.1.14-3 hplip/3.20.11+dfsg0-1
+
+# 2020-12-07
+force-skiptest gdk-pixbuf/2.40.0+dfsg-8
+force-skiptest nvidia-graphics-drivers/455.45.01-1
+# 2020-11-18
+force-skiptest linux/5.9.6-1kali1
+# 2020-11-16
+force-skiptest erlang/1:23.1.2+dfsg-1 libidn2/2.3.0-3 libseccomp/2.5.0-3 logrotate/3.17.0-2 sane-backends/1.0.31-3 golang-golang-x-sys/0.0~git20201101.da20708-1 golang-golang-x-net/1:0.0+git20201031.ff519b6+dfsg-1 python3-defaults/3.8.6-1 openssl/1.1.1h-1
+force-badtest drms/0.6.0-1 node-chokidar/3.4.3-3 node-diff/4.0.2~dfsg-2 node-estraverse/5.2.0-1 node-fastcgi/1.3.3-3 yasnippet/0.14.0+git20200603.5cbdbf0d-1 rootlesskit/0.11.0+ds1-1 python-markdown-math/0.8-1 python-graphviz/0.14.2-1 python-django/2:2.2.17-1 
+force-skiptest ocaml/4.11.1-4 llvm-toolchain-10/1:10.0.1-8 ocsigenserver/2.16.1-1 libguestfs/1:1.42.0-11 qtbase-opensource-src/5.15.1+dfsg-2 qtbase-opensource-src-gles/5.15.1+dfsg-2
+force-skiptest kali-defaults/2020.4.7
+force-skiptest kali-meta/2020.4.8
+force-skiptest kali-themes/2020.4.4
+force-skiptest gdm3/3.38.2-1
+force-skiptest glib2.0/2.66.2-1
+force-skiptest gcc-10/10.2.0-16
+force-skiptest pango1.0/1.46.2-2
+# 2020-11-10
+force-badtest impacket-scripts/1.5
+# 2020-11-03
+force-skiptest kali-defaults/2020.4.5
+force-skiptest glibc/2.31-4 linux/5.9.1-1kali2 nvidia-graphics-drivers/450.80.02-1
+force-badtest libverilog-perl/3.474-1 node-argparse/2.0.1-1
+force-skiptest kali-defaults/2020.4.4
+force-badtest python-fakeredis/1.4.4-1
+force-badtest scotch/6.1.0-2 libfile-mimeinfo-perl/0.30-1 libimage-exiftool-perl/12.09+dfsg-1 node-expand-tilde/2.0.2+~cs2.0.3-1 node-globby/11.0.1+~cs16.19.32-1 node-json5/2.1.3-1 node-rechoir/0.7.0-1 node-url-to-options/2.0.0-1 prank/0.0.170427+dfsg-3
+force-skiptest gstreamer1.0/1.18.1-1 libjson-xs-perl/4.030-1 lme4/1.1-25-1 ncompress/4.2.4.6-4 network-manager/1.27.91-1kali1 numpy/1:1.19.3-1 openntpd/1:6.2p3-4.1
+force-badtest drumkv1/0.9.18-1 python3-fakeredis/1.4.4-1 r-cran-pbdzmq/0.3.3.1+dfsg-1 r-cran-redland/1.0.17-14-1 r-cran-reticulate/1.18+dfsg-1 rust-error-chain/0.12.4-1 rust-libslirp-sys/4.2.0-1 python-django-extensions/3.0.3-3 ruby-fakeredis/0.8.0-4 
+force-skiptest cdebconf/0.255 ipython/7.19.0-1 ruby-redis/4.2.2-2 ruby2.7/2.7.2-3 apparmor/2.13.5-1 r-cran-digest/0.6.27-1 umockdev/0.14.4-1 ki18n/5.74.0-3 lxml/4.6.1-1 redis/5:6.0.9-1 golang-github-prometheus-common/0.14.0-2 golang-github-spf13-cobra/1.1.1-1 golang-github-urfave-cli/1.22.4-2 freetype/2.10.2+dfsg-4 gnome-online-accounts/3.38.0-1 iproute2/5.9.0-1 pyyaml/5.3.1-3 rsyslog/8.2010.0-1
+#2020-10-30
+force-skiptest kio/5.74.0-2
+urgent zanshin/0.5.71-2
+urgent kmail/4:20.08.2-3
+urgent kdepim-runtime/4:20.08.2-3
+urgent kjots/4:5.0.2-3
+urgent kitinerary/20.08.2-4
+#2020-10-20
+force-skiptest linux/5.8.14-1kali1
+#2020-10-06
+force-skiptest pillow/7.2.0-1
+force-skiptest lxml/4.5.2-1kali2
+force-skiptest net-snmp/5.9+dfsg-3
+force-skiptest numpy/1:1.19.2-2
+force-skiptest python-filebytes/0.9.12-0kali2
+#2020-09-25
+force-skiptest linux/5.8.10-1kali1
+#2020-09-16
+force-skiptest gcc-10/10.2.0-7
+force-skiptest linux/5.8.7-1kali1
+#2020-08-31
+force-skiptest linux/5.7.17-1kali1
+force-skiptest camlzip/1.10-1
+force-skiptest curl/7.72.0-1
+force-skiptest cryptsetup/2:2.3.3-2
+force-skiptest dpkg/1.20.5kali1
+#2020-08-10
+unblock glibc/2.31-2
+force-badtest glibc/2.31-2
+force-hint glibc/2.31-2
+#2020-07-21
+force-skiptest node-babel/6.26.0+repack-3
+force-skiptest protobuf/3.12.3-2
+
+#2020-07-20
+force-badtest prometheus/2.19.2+ds-1 ulfius/2.6.8-1
+force-skiptest init-system-helpers/1.58+kali1
+force linux/5.7.6-1kali2
+force-skiptest freetype/2.10.2+dfsg-2kali1
+#2020-06-22
+force-badtest dovecot/2.3.10.1+dfsg1-2 ngetty/1.1-7 dropbear/2020.79-2 ros-catkin-lint/1.6.9-1 
+easy appstream-generator/amd64/0.8.2-2 appstream-generator/arm64/0.8.2-2 appstream-generator/i386/0.8.2-2 glib-d/amd64/2.2.0-1 glib-d/arm64/2.2.0-1 glib-d/i386/2.2.0-1
+easy tilix/amd64/1.9.3-4 tilix/arm64/1.9.3-4 tilix/i386/1.9.3-4 gtk-d/amd64/3.9.0-3 gtk-d/arm64/3.9.0-3 gtk-d/i386/3.9.0-3
+easy stdx-allocator/amd64/3.1.0~beta.2-3 stdx-allocator/arm64/3.1.0~beta.2-3 stdx-allocator/i386/3.1.0~beta.2-3 mir-core/amd64/1.0.2-1 mir-core/arm64/1.0.2-1 mir-core/i386/1.0.2-1 dcontainers/amd64/0.8.0~alpha.16-1 dcontainers/arm64/0.8.0~alpha.16-1 dcontainers/i386/0.8.0~alpha.16-1
+
+#2020-06-08
+force-skiptest foreign/0.8.80-1
+# 2020-06-03
+force-skiptest proxytunnel/1.10.20200507-1
+force-hint gtk-d/amd64/3.9.0-3 gtk-d/arm64/3.9.0-3 gtk-d/i386/3.9.0-3 tilix/amd64/1.9.3-4 tilix/arm64/1.9.3-4 tilix/i386/1.9.3-4
+force-skiptest dbi/1.1.0-3
+force-skiptest latticeextra/0.6-29-3
+force-skiptest r-bioc-annotationdbi/1.50.0-1
+force-skiptest r-bioc-annotationfilter/1.12.0+dfsg-1
+force-badtest lxcfs/4.0.3-1
+easy dcontainers/amd64/0.8.0~alpha.16-1 dcontainers/arm64/0.8.0~alpha.16-1 dcontainers/i386/0.8.0~alpha.16-1 stdx-allocator/amd64/3.1.0~beta.2-3 stdx-allocator/arm64/3.1.0~beta.2-3 stdx-allocator/armel/3.1.0~beta.2-3 stdx-allocator/armhf/3.1.0~beta.2-3 stdx-allocator/i386/3.1.0~beta.2-3 stdx-allocator/s390x/3.1.0~beta.2-3
+force-hint mir-core/1.0.2-1
+# force r-base transition
+force r-base/4.0.0-3
+force-skiptest r-base/4.0.0-3
+force-skiptest r-bioc-biobase/2.48.0-1
+force-skiptest r-bioc-biocparallel/1.22.0-1
+force-skiptest r-bioc-biovizbase/1.34.1-2
+force-skiptest r-bioc-deseq2/1.26.0+dfsg-2
+force-skiptest r-bioc-tfbstools/1.24.0+dfsg-2
+force-skiptest r-bioc-gviz/1.30.3+dfsg-1
+force-skiptest r-bioc-tfbstools/1.24.0+dfsg-2
+force-skiptest r-bioc-geneplotter/1.66.0-1
+force-skiptest r-bioc-genomicranges/1.40.0+dfsg-1
+force-skiptest r-bioc-go.db/3.11.1-1
+force-skiptest r-bioc-iranges/2.22.2-1
+force-skiptest r-bioc-org.hs.eg.db/3.11.1-1
+force-skiptest r-bioc-s4vectors/0.26.1-1
+force-skiptest r-bioc-summarizedexperiment/1.18.1+dfsg-1
+force-skiptest r-cran-bayestestr/0.6.0-2
+force-skiptest r-cran-effectsize/0.3.1-1
+force-skiptest r-cran-emmeans/1.4.6-2
+force-skiptest r-cran-ggeffects/0.14.3-3
+force-skiptest r-cran-ggplot2/3.3.0+dfsg-2
+force-skiptest r-cran-glue/1.4.1-1
+force-skiptest r-cran-insight/0.8.4-1
+force-skiptest r-cran-jomo/2.7-1-1
+force-skiptest r-cran-kmi/0.5.5-2
+force-skiptest r-cran-knitr/1.28+dfsg-2
+force-skiptest r-cran-magrittr/1.5-6
+force-skiptest r-cran-mice/3.9.0-2
+force-skiptest r-cran-parameters/0.7.0-1
+force-skiptest r-cran-performance/0.4.6-2
+force-skiptest r-cran-r6/2.4.1-2
+force-skiptest r-cran-rcpparmadillo/0.9.880.1.0-1
+force-skiptest r-cran-runit/0.4.32-3
+force-skiptest r-cran-scales/1.1.1-1
+force-skiptest r-cran-sjlabelled/1.1.4-3
+force-skiptest r-cran-sjmisc/2.8.4-3
+force-skiptest r-cran-sjstats/0.18.0-2
+force-skiptest r-cran-sp/1:1.4-2-2
+force-skiptest r-cran-testthat/2.3.2-2
+force-skiptest r-cran-tidyselect/1.1.0+dfsg-1
+force-skiptest sandwich/2.5-1-3
+force-skiptest r-cran-etm/1.1-2
+force-skiptest r-cran-ggeffects/0.14.3-3
+force-skiptest r-cran-sjlabelled/1.1.4-3
+force-skiptest r-cran-sjmisc/2.8.4-3
+force-skiptest r-cran-sp/1:1.4-2-2
+force-skiptest r-bioc-mutationalpatterns/2.0.0-2
+force-skiptest r-cran-mice/3.9.0-2
+force-skiptest r-cran-vctrs/0.3.0-2
+force-skiptest r-bioc-gviz/1.32.0+dfsg-2
+force-skiptest r-bioc-genefilter/1.70.0-1
+force-skiptest r-bioc-biocgenerics/0.34.0-1
+force-skiptest r-bioc-edaseq/2.20.0+dfsg-2
+remove r-bioc-graph/1.64.0-1
+remove r-bioc-biocviews/1.54.0-2
+remove r-bioc-hypergraph/1.58.0-1
+remove r-bioc-altcdfenvs/1:2.48.0-1
+remove r-bioc-rbgl/1.62.1+dfsg-1
+remove r-cran-ggm/2.5-1
+force-hint abind/1.4-5-2 acepack/amd64/1.4.1-2 acepack/arm64/1.4.1-2 acepack/armel/1.4.1-2 acepack/armhf/1.4.1-2 acepack/i386/1.4.1-2 boot/1.3-25-2 cairodevice/amd64/2.28-1 cairodevice/arm64/2.28-1 cairodevice/armel/2.28-1 cairodevice/armhf/2.28-1 cairodevice/i386/2.28-1 car/3.0-8-1 chron/amd64/2.3-55-1 chron/arm64/2.3-55-1 chron/armel/2.3-55-1 chron/armhf/2.3-55-1 chron/i386/2.3-55-1 cluster/amd64/2.1.0-2 cluster/arm64/2.1.0-2 cluster/armel/2.1.0-2 cluster/armhf/2.1.0-2 cluster/i386/2.1.0-2 codetools/0.2-16-2 date/amd64/1.2.39-1 date/arm64/1.2.39-1 date/armel/1.2.39-1 date/armhf/1.2.39-1 date/i386/1.2.39-1 effects/4.1.4-2 fasianoptions/amd64/3042.82-1 fasianoptions/arm64/3042.82-1 fasianoptions/armel/3042.82-1 fasianoptions/armhf/3042.82-1 fasianoptions/i386/3042.82-1 fassets/amd64/3042.84-1 fassets/arm64/3042.84-1 fassets/armel/3042.84-1 fassets/armhf/3042.84-1 fassets/i386/3042.84-1 fbasics/amd64/3042.89.1-1 fbasics/arm64/3042.89.1-1 fbasics/armel/3042.89.1-1 fbasics/armhf/3042.89.1-1 fbasics/i386/3042.89.1-1 fbonds/3042.78-4 fcopulae/amd64/3042.82.1-1 fcopulae/arm64/3042.82.1-1 fcopulae/armel/3042.82.1-1 fcopulae/armhf/3042.82.1-1 fcopulae/i386/3042.82.1-1 fexoticoptions/3042.80-3 fextremes/3042.82-3 fgarch/amd64/3042.83.2-1 fgarch/arm64/3042.83.2-1 fgarch/armel/3042.83.2-1 fgarch/armhf/3042.83.2-1 fgarch/i386/3042.83.2-1 fimport/3042.85-3 fmultivar/3042.80.1-2 fnonlinear/amd64/3042.79-1 fnonlinear/arm64/3042.79-1 fnonlinear/armel/3042.79-1 fnonlinear/armhf/3042.79-1 fnonlinear/i386/3042.79-1 foptions/amd64/3042.86-1 foptions/arm64/3042.86-1 foptions/armel/3042.86-1 foptions/armhf/3042.86-1 foptions/i386/3042.86-1 fportfolio/amd64/3042.83.1-1 fportfolio/arm64/3042.83.1-1 fportfolio/armel/3042.83.1-1 fportfolio/armhf/3042.83.1-1 fportfolio/i386/3042.83.1-1 fregression/amd64/3042.82-1 fregression/arm64/3042.82-1 fregression/armel/3042.82-1 fregression/armhf/3042.82-1 fregression/i386/3042.82-1 ftrading/3042.79-3 funitroots/amd64/3042.79-1 funitroots/arm64/3042.79-1 funitroots/armel/3042.79-1 funitroots/armhf/3042.79-1 funitroots/i386/3042.79-1 gdata/2.18.0-3 gmodels/2.18.1-2 gplots/3.0.3-2 gtools/amd64/3.8.2-1 gtools/arm64/3.8.2-1 gtools/armel/3.8.2-1 gtools/armhf/3.8.2-1 gtools/i386/3.8.2-1 hmisc/amd64/4.4-0-1 hmisc/arm64/4.4-0-1 hmisc/armhf/4.4-0-1 hmisc/i386/4.4-0-1 its/1.1.8-8 kernsmooth/amd64/2.23-17-1 kernsmooth/arm64/2.23-17-1 kernsmooth/armel/2.23-17-1 kernsmooth/armhf/2.23-17-1 kernsmooth/i386/2.23-17-1 lattice/amd64/0.20-41-1 lattice/arm64/0.20-41-1 lattice/armel/0.20-41-1 lattice/armhf/0.20-41-1 lattice/i386/0.20-41-1 littler/amd64/0.3.9-1 littler/arm64/0.3.9-1 littler/armel/0.3.9-1 littler/armhf/0.3.9-1 littler/i386/0.3.9-1 lme4/amd64/1.1-23-1 lme4/arm64/1.1-23-1 lme4/armel/1.1-23-1 lme4/armhf/1.1-23-1 lme4/i386/1.1-23-1 lmtest/amd64/0.9.37-2 lmtest/arm64/0.9.37-2 lmtest/armel/0.9.37-2 lmtest/armhf/0.9.37-2 lmtest/i386/0.9.37-2 mgcv/amd64/1.8-31-1 mgcv/arm64/1.8-31-1 mgcv/armel/1.8-31-1 mgcv/armhf/1.8-31-1 mgcv/i386/1.8-31-1 misc3d/0.8-4-5 mnormt/amd64/1.5-7-1 mnormt/arm64/1.5-7-1 mnormt/armel/1.5-7-1 mnormt/armhf/1.5-7-1 mnormt/i386/1.5-7-1 multcomp/1.4-13-2 mvtnorm/amd64/1.1-0-1 mvtnorm/arm64/1.1-0-1 mvtnorm/armel/1.1-0-1 mvtnorm/armhf/1.1-0-1 mvtnorm/i386/1.1-0-1 nlme/amd64/3.1.147-1 nlme/arm64/3.1.147-1 nlme/armel/3.1.147-1 nlme/armhf/3.1.147-1 nlme/i386/3.1.147-1 polspline/1.1.19-1 quadprog/amd64/1.5-8-1 quadprog/arm64/1.5-8-1 quadprog/armel/1.5-8-1 quadprog/armhf/1.5-8-1 quadprog/i386/1.5-8-1 r-base/4.0.0-3 r-bioc-affy/1.66.0-1 r-bioc-affyio/1.58.0-1 r-bioc-all/1.30.0-1 r-bioc-altcdfenvs/1:2.50.0-1 r-bioc-annotate/1.66.0+dfsg-1 r-bioc-annotationhub/2.20.0+dfsg-1 r-bioc-biobase/2.48.0-1 r-bioc-biocfilecache/1.12.0+dfsg-1 r-bioc-biocgenerics/0.34.0-1 r-bioc-biocparallel/1.22.0-1 r-bioc-biocversion/3.11.1-1 r-bioc-biocviews/1.56.0-1 r-bioc-biomformat/1.16.0+dfsg-1 r-bioc-bitseq/1.32.0+dfsg-1 r-bioc-bladderbatch/1.26.0-1 r-bioc-chemminer/3.40.0+dfsg-2 r-bioc-consensusclusterplus/1.52.0-1 r-bioc-ctc/1.62.0-1 r-bioc-cummerbund/2.30.0-1 r-bioc-dada2/1.16.0+dfsg-1 r-bioc-delayedarray/0.14.0+dfsg-2 r-bioc-demixt/1.4.0-1 r-bioc-deseq2/1.28.1+dfsg-1 r-bioc-dnacopy/1.62.0-1 r-bioc-ebseq/1.28.0-1 r-bioc-edaseq/2.22.0+dfsg-1 r-bioc-edger/3.30.0+dfsg-1 r-bioc-fmcsr/1.30.0+dfsg-1 r-bioc-genefilter/1.70.0-1 r-bioc-genelendatabase/1.24.0-1 r-bioc-geneplotter/1.66.0-1 r-bioc-genomeinfodbdata/1.2.3-1 r-bioc-geoquery/2.56.0+dfsg-1 r-bioc-gosemsim/2.14.0-1 r-bioc-goseq/1.40.0-1 r-bioc-graph/1.66.0-2 r-bioc-hilbertvis/1.46.0-1 r-bioc-htsfilter/1.28.0-1 r-bioc-hypergraph/1.60.0-1 r-bioc-ihw/1.16.0+dfsg-1 r-bioc-impute/1.62.0-1 r-bioc-interactivedisplaybase/1.26.2+dfsg-1 r-bioc-iranges/2.22.2-1 r-bioc-keggrest/1.28.0+dfsg-1 r-bioc-limma/3.44.1+dfsg-1 r-bioc-lpsymphony/1.16.0+dfsg-1 r-bioc-makecdfenv/1.64.0-1 r-bioc-mergeomics/1.16.0-1 r-bioc-metagenomeseq/1.30.0-1 r-bioc-mofa/1.4.0+dfsg-1 r-bioc-multiassayexperiment/1.14.0+dfsg-1 r-bioc-multtest/2.44.0-1 r-bioc-mutationalpatterns/2.0.0-2 r-bioc-nanostringqcpro/1.20.0-1 r-bioc-pcamethods/1.80.0-1 r-bioc-phyloseq/1.32.0+dfsg-1 r-bioc-preprocesscore/1.50.0-1 r-bioc-protgenerics/1.20.0-1 r-bioc-pwmenrich/4.23.0-1 r-bioc-qusage/2.22.0-1 r-bioc-qvalue/2.20.0-1 r-bioc-rbgl/1.64.0+dfsg-1 r-bioc-rgsepd/1.20.0-1 r-bioc-rhdf5/2.32.0+dfsg-1 r-bioc-rhdf5lib/1.10.0+dfsg1-1 r-bioc-rhtslib/1.20.0+dfsg-1 r-bioc-rots/1.16.0-1 r-bioc-s4vectors/0.26.1-1 r-bioc-savr/1.26.0-1 r-bioc-snpstats/1.38.0+dfsg-1 r-bioc-summarizedexperiment/1.18.1+dfsg-1 r-bioc-tximport/1.16.0+dfsg-1 r-bioc-wrench/1.6.0+dfsg-1 r-bioc-zlibbioc/1.34.0+dfsg-1 r-cran-actuar/amd64/2.3-3-1 r-cran-actuar/arm64/2.3-3-1 r-cran-actuar/armel/2.3-3-1 r-cran-actuar/armhf/2.3-3-1 r-cran-actuar/i386/2.3-3-1 r-cran-ade4/amd64/1.7-15-1 r-cran-ade4/arm64/1.7-15-1 r-cran-ade4/armel/1.7-15-1 r-cran-ade4/armhf/1.7-15-1 r-cran-ade4/i386/1.7-15-1 r-cran-adegenet/2.1.3-1 r-cran-adegraphics/1.0-15-2 r-cran-adephylo/amd64/1.1-11-3 r-cran-adephylo/arm64/1.1-11-3 r-cran-adephylo/armel/1.1-11-3 r-cran-adephylo/armhf/1.1-11-3 r-cran-adephylo/i386/1.1-11-3 r-cran-aer/1.2-9-2 r-cran-afex/0.27-2-2 r-cran-alakazam/1.0.1-1 r-cran-amap/amd64/0.8-18-2 r-cran-amap/arm64/0.8-18-2 r-cran-amap/armel/0.8-18-2 r-cran-amap/armhf/0.8-18-2 r-cran-amap/i386/0.8-18-2 r-cran-amelia/amd64/1.7.6-1 r-cran-amelia/arm64/1.7.6-1 r-cran-amelia/armel/1.7.6-1 r-cran-amelia/armhf/1.7.6-1 r-cran-amelia/i386/1.7.6-1 r-cran-amore/amd64/0.2-16-1 r-cran-amore/arm64/0.2-16-1 r-cran-amore/armel/0.2-16-1 r-cran-amore/armhf/0.2-16-1 r-cran-amore/i386/0.2-16-1 r-cran-animation/2.6+dfsg-2 r-cran-apcluster/amd64/1.4.8-1 r-cran-apcluster/arm64/1.4.8-1 r-cran-apcluster/armel/1.4.8-1 r-cran-apcluster/armhf/1.4.8-1 r-cran-apcluster/i386/1.4.8-1 r-cran-ape/amd64/5.3-1 r-cran-ape/arm64/5.3-1 r-cran-ape/armel/5.3-1 r-cran-ape/armhf/5.3-1 r-cran-ape/i386/5.3-1 r-cran-aplpack/1.3.3-2 r-cran-arm/1.11-1-2 r-cran-askpass/amd64/1.1-1 r-cran-askpass/arm64/1.1-1 r-cran-askpass/armel/1.1-1 r-cran-askpass/armhf/1.1-1 r-cran-askpass/i386/1.1-1 r-cran-assertive.base/0.0-7-4 r-cran-assertive.sets/0.0-3-3 r-cran-assertthat/0.2.1-2 r-cran-av/0.5.0+dfsg-3 r-cran-backports/1.1.7-1 r-cran-base64enc/amd64/0.1-3-2 r-cran-base64enc/arm64/0.1-3-2 r-cran-base64enc/armel/0.1-3-2 r-cran-base64enc/armhf/0.1-3-2 r-cran-base64enc/i386/0.1-3-2 r-cran-base64url/amd64/1.4-2 r-cran-base64url/arm64/1.4-2 r-cran-base64url/armel/1.4-2 r-cran-base64url/armhf/1.4-2 r-cran-base64url/i386/1.4-2 r-cran-batchjobs/1.8-2 r-cran-batchtools/amd64/0.9.13-1 r-cran-batchtools/arm64/0.9.13-1 r-cran-batchtools/armel/0.9.13-1 r-cran-batchtools/armhf/0.9.13-1 r-cran-batchtools/i386/0.9.13-1 r-cran-bayesfactor/amd64/0.9.12-4.2-1 r-cran-bayesfactor/arm64/0.9.12-4.2-1 r-cran-bayesfactor/armel/0.9.12-4.2-1 r-cran-bayesfactor/armhf/0.9.12-4.2-1 r-cran-bayesfactor/i386/0.9.12-4.2-1 r-cran-bayesfm/amd64/0.1.3-1 r-cran-bayesfm/arm64/0.1.3-1 r-cran-bayesfm/armel/0.1.3-1 r-cran-bayesfm/armhf/0.1.3-1 r-cran-bayesfm/i386/0.1.3-1 r-cran-bayesm/amd64/3.1-4+dfsg-1 r-cran-bayesm/arm64/3.1-4+dfsg-1 r-cran-bayesm/armel/3.1-4+dfsg-1 r-cran-bayesm/armhf/3.1-4+dfsg-1 r-cran-bayesm/i386/3.1-4+dfsg-1 r-cran-bayesplot/1.7.1-3 r-cran-bayestestr/0.6.0-2 r-cran-bbmisc/amd64/1.11-3 r-cran-bbmisc/arm64/1.11-3 r-cran-bbmisc/armel/1.11-3 r-cran-bbmisc/armhf/1.11-3 r-cran-bbmisc/i386/1.11-3 r-cran-bbmle/1.0.23.1-2 r-cran-bdgraph/amd64/2.62-1 r-cran-bdgraph/arm64/2.62-1 r-cran-bdgraph/armel/2.62-1 r-cran-bdgraph/armhf/2.62-1 r-cran-bdgraph/i386/2.62-1 r-cran-bdsmatrix/amd64/1.3-4-1 r-cran-bdsmatrix/arm64/1.3-4-1 r-cran-bdsmatrix/armel/1.3-4-1 r-cran-bdsmatrix/armhf/1.3-4-1 r-cran-bdsmatrix/i386/1.3-4-1 r-cran-beeswarm/0.2.3-4 r-cran-biasedurn/amd64/1.07-3 r-cran-biasedurn/arm64/1.07-3 r-cran-biasedurn/armel/1.07-3 r-cran-biasedurn/armhf/1.07-3 r-cran-biasedurn/i386/1.07-3 r-cran-bibtex/amd64/0.4.2.2-1 r-cran-bibtex/arm64/0.4.2.2-1 r-cran-bibtex/armel/0.4.2.2-1 r-cran-bibtex/armhf/0.4.2.2-1 r-cran-bibtex/i386/0.4.2.2-1 r-cran-bigmemory.sri/0.1.3-3 r-cran-bigmemory/amd64/4.5.36-1 r-cran-bigmemory/arm64/4.5.36-1 r-cran-bigmemory/armel/4.5.36-1 r-cran-bigmemory/armhf/4.5.36-1 r-cran-bigmemory/i386/4.5.36-1 r-cran-bindr/0.1.1-3 r-cran-bindrcpp/amd64/0.2.2-2 r-cran-bindrcpp/arm64/0.2.2-2 r-cran-bindrcpp/armel/0.2.2-2 r-cran-bindrcpp/armhf/0.2.2-2 r-cran-bindrcpp/i386/0.2.2-2 r-cran-bio3d/amd64/2.4-1-1 r-cran-bio3d/arm64/2.4-1-1 r-cran-bio3d/armel/2.4-1-1 r-cran-bio3d/armhf/2.4-1-1 r-cran-bio3d/i386/2.4-1-1 r-cran-bit/amd64/1.1-15.2-1 r-cran-bit/arm64/1.1-15.2-1 r-cran-bit/armel/1.1-15.2-1 r-cran-bit/armhf/1.1-15.2-1 r-cran-bit/i386/1.1-15.2-1 r-cran-bit64/amd64/0.9-7-3 r-cran-bit64/arm64/0.9-7-3 r-cran-bit64/armel/0.9-7-3 r-cran-bit64/armhf/0.9-7-3 r-cran-bit64/i386/0.9-7-3 r-cran-bitops/amd64/1.0-6-4 r-cran-bitops/arm64/1.0-6-4 r-cran-bitops/armel/1.0-6-4 r-cran-bitops/armhf/1.0-6-4 r-cran-bitops/i386/1.0-6-4 r-cran-biwt/amd64/1.0-2 r-cran-biwt/arm64/1.0-2 r-cran-biwt/armel/1.0-2 r-cran-biwt/armhf/1.0-2 r-cran-biwt/i386/1.0-2 r-cran-blme/1.0-4-3 r-cran-blob/1.2.1-2 r-cran-blockmodeling/amd64/0.3.6-1 r-cran-blockmodeling/arm64/0.3.6-1 r-cran-blockmodeling/armel/0.3.6-1 r-cran-blockmodeling/armhf/0.3.6-1 r-cran-blockmodeling/i386/0.3.6-1 r-cran-bms/0.3.4-6 r-cran-bold/1.0.0+dfsg-2 r-cran-bookdown/0.19+dfsg-1 r-cran-boolnet/amd64/2.1.5-2 r-cran-boolnet/arm64/2.1.5-2 r-cran-boolnet/armel/2.1.5-2 r-cran-boolnet/armhf/2.1.5-2 r-cran-boolnet/i386/2.1.5-2 r-cran-bradleyterry2/1.1-2-2 r-cran-brew/1.0-6-4 r-cran-brglm/amd64/0.6.2-1 r-cran-brglm/arm64/0.6.2-1 r-cran-brglm/armel/0.6.2-1 r-cran-brglm/armhf/0.6.2-1 r-cran-brglm/i386/0.6.2-1 r-cran-bridgesampling/1.0-0-2 r-cran-brms/2.12.0-2 r-cran-brobdingnag/1.2-6-2 r-cran-broom/0.5.6+dfsg-2 r-cran-ca/0.71.1-2 r-cran-caic4/0.9-2 r-cran-cairo/amd64/1.5-12-1 r-cran-cairo/arm64/1.5-12-1 r-cran-cairo/armel/1.5-12-1 r-cran-cairo/armhf/1.5-12-1 r-cran-cairo/i386/1.5-12-1 r-cran-calibrate/1.7.5-2 r-cran-callr/3.4.3-2 r-cran-cardata/3.0.4-1 r-cran-caret/amd64/6.0-86+dfsg-1 r-cran-caret/arm64/6.0-86+dfsg-1 r-cran-caret/armel/6.0-86+dfsg-1 r-cran-caret/armhf/6.0-86+dfsg-1 r-cran-caret/i386/6.0-86+dfsg-1 r-cran-catools/amd64/1.18.0-1 r-cran-catools/arm64/1.18.0-1 r-cran-catools/armel/1.18.0-1 r-cran-catools/armhf/1.18.0-1 r-cran-catools/i386/1.18.0-1 r-cran-cellranger/1.1.0-3 r-cran-checkmate/amd64/2.0.0-1 r-cran-checkmate/arm64/2.0.0-1 r-cran-checkmate/armel/2.0.0-1 r-cran-checkmate/armhf/2.0.0-1 r-cran-checkmate/i386/2.0.0-1 r-cran-circlize/0.4.9-2 r-cran-class/amd64/7.3-17-1 r-cran-class/arm64/7.3-17-1 r-cran-class/armel/7.3-17-1 r-cran-class/armhf/7.3-17-1 r-cran-class/i386/7.3-17-1 r-cran-classint/amd64/0.4-3-1 r-cran-classint/arm64/0.4-3-1 r-cran-classint/armel/0.4-3-1 r-cran-classint/armhf/0.4-3-1 r-cran-classint/i386/0.4-3-1 r-cran-cli/2.0.2-2 r-cran-cliapp/0.1.0-2 r-cran-clipr/0.7.0-2 r-cran-clisymbols/1.2.0-2 r-cran-clubsandwich/0.4.2-2 r-cran-clue/amd64/0.3-57-1 r-cran-clue/arm64/0.3-57-1 r-cran-clue/armel/0.3-57-1 r-cran-clue/armhf/0.3-57-1 r-cran-clue/i386/0.3-57-1 r-cran-clustergeneration/1.3.4-3 r-cran-cmprsk/amd64/2.2-9-1 r-cran-cmprsk/arm64/2.2-9-1 r-cran-cmprsk/armel/2.2-9-1 r-cran-cmprsk/armhf/2.2-9-1 r-cran-cmprsk/i386/2.2-9-1 r-cran-coda/0.19-3-2 r-cran-coin/amd64/1.3-1-1 r-cran-coin/arm64/1.3-1-1 r-cran-coin/armel/1.3-1-1 r-cran-coin/armhf/1.3-1-1 r-cran-coin/i386/1.3-1-1 r-cran-colorspace/amd64/1.4-1+dfsg-1 r-cran-colorspace/arm64/1.4-1+dfsg-1 r-cran-colorspace/armel/1.4-1+dfsg-1 r-cran-colorspace/armhf/1.4-1+dfsg-1 r-cran-colorspace/i386/1.4-1+dfsg-1 r-cran-colourpicker/1.0+dfsg-3 r-cran-combinat/0.0-8-7 r-cran-commonmark/amd64/1.7-1 r-cran-commonmark/arm64/1.7-1 r-cran-commonmark/armel/1.7-1 r-cran-commonmark/armhf/1.7-1 r-cran-commonmark/i386/1.7-1 r-cran-contfrac/amd64/1.1-12-1 r-cran-contfrac/arm64/1.1-12-1 r-cran-contfrac/armel/1.1-12-1 r-cran-contfrac/armhf/1.1-12-1 r-cran-contfrac/i386/1.1-12-1 r-cran-conting/1.7-2 r-cran-corpcor/1.6.9-4 r-cran-corrplot/0.84-3 r-cran-covid19us/0.1.6-1 r-cran-covr/amd64/3.5.0+dfsg-1 r-cran-covr/arm64/3.5.0+dfsg-1 r-cran-covr/armel/3.5.0+dfsg-1 r-cran-covr/armhf/3.5.0+dfsg-1 r-cran-covr/i386/3.5.0+dfsg-1 r-cran-cowplot/1.0.0+dfsg-3 r-cran-crayon/1.3.4-5 r-cran-crosstalk/1.1.0.1+dfsg-2 r-cran-crul/0.9.0+dfsg-2 r-cran-cubature/amd64/2.0.4-1 r-cran-cubature/arm64/2.0.4-1 r-cran-cubature/armel/2.0.4-1 r-cran-cubature/armhf/2.0.4-1 r-cran-cubature/i386/2.0.4-1 r-cran-curl/amd64/4.3+dfsg-1 r-cran-curl/arm64/4.3+dfsg-1 r-cran-curl/armel/4.3+dfsg-1 r-cran-curl/armhf/4.3+dfsg-1 r-cran-curl/i386/4.3+dfsg-1 r-cran-cvst/0.2-2-3 r-cran-d3network/0.5.2.1-3 r-cran-data.table/amd64/1.12.8+dfsg-1 r-cran-data.table/arm64/1.12.8+dfsg-1 r-cran-data.table/armel/1.12.8+dfsg-1 r-cran-data.table/armhf/1.12.8+dfsg-1 r-cran-data.table/i386/1.12.8+dfsg-1 r-cran-dbitest/1.7.0-2 r-cran-dbplyr/1.4.3-2 r-cran-ddalpha/amd64/1.3.11-1 r-cran-ddalpha/arm64/1.3.11-1 r-cran-ddalpha/armel/1.3.11-1 r-cran-ddalpha/armhf/1.3.11-1 r-cran-ddalpha/i386/1.3.11-1 r-cran-deal/amd64/1:1.2-39-1 r-cran-deal/arm64/1:1.2-39-1 r-cran-deal/armel/1:1.2-39-1 r-cran-deal/armhf/1:1.2-39-1 r-cran-deal/i386/1:1.2-39-1 r-cran-deldir/amd64/0.1-25-1 r-cran-deldir/arm64/0.1-25-1 r-cran-deldir/armel/0.1-25-1 r-cran-deldir/armhf/0.1-25-1 r-cran-deldir/i386/0.1-25-1 r-cran-dendextend/1.13.4+dfsg-2 r-cran-deoptim/amd64/2.2-5-1 r-cran-deoptim/arm64/2.2-5-1 r-cran-deoptim/armel/2.2-5-1 r-cran-deoptim/armhf/2.2-5-1 r-cran-deoptim/i386/2.2-5-1 r-cran-deoptimr/amd64/1.0-8-1 r-cran-deoptimr/arm64/1.0-8-1 r-cran-deoptimr/armel/1.0-8-1 r-cran-deoptimr/armhf/1.0-8-1 r-cran-deoptimr/i386/1.0-8-1 r-cran-desc/1.2.0-3 r-cran-desolve/amd64/1.28-1 r-cran-desolve/arm64/1.28-1 r-cran-desolve/armel/1.28-1 r-cran-desolve/armhf/1.28-1 r-cran-desolve/i386/1.28-1 r-cran-devtools/2.3.0-2 r-cran-dfoptim/2018.2-1-3 r-cran-diagnosismed/0.2.3-7 r-cran-diffobj/0.3.0-1 r-cran-digest/amd64/0.6.25-1 r-cran-digest/arm64/0.6.25-1 r-cran-digest/armel/0.6.25-1 r-cran-digest/armhf/0.6.25-1 r-cran-digest/i386/0.6.25-1 r-cran-dimred/amd64/0.2.3-1 r-cran-dimred/arm64/0.2.3-1 r-cran-dimred/armel/0.2.3-1 r-cran-dimred/armhf/0.2.3-1 r-cran-dimred/i386/0.2.3-1 r-cran-diptest/amd64/0.75-7-1 r-cran-diptest/arm64/0.75-7-1 r-cran-diptest/armel/0.75-7-1 r-cran-diptest/armhf/0.75-7-1 r-cran-diptest/i386/0.75-7-1 r-cran-discriminer/0.1-29-3 r-cran-distory/amd64/1.4.4-1 r-cran-distory/arm64/1.4.4-1 r-cran-distory/armel/1.4.4-1 r-cran-distory/armhf/1.4.4-1 r-cran-distory/i386/1.4.4-1 r-cran-domc/1.3.6-2 r-cran-doparallel/1.0.15-2 r-cran-dorng/1.8.2-2 r-cran-dosefinding/amd64/0.9-17-1 r-cran-dosefinding/arm64/0.9-17-1 r-cran-dosefinding/armel/0.9-17-1 r-cran-dosefinding/armhf/0.9-17-1 r-cran-dosefinding/i386/0.9-17-1 r-cran-dosnow/1.0.18-2 r-cran-dotcall64/amd64/1.0-0-1 r-cran-dotcall64/arm64/1.0-0-1 r-cran-dotcall64/armel/1.0-0-1 r-cran-dotcall64/armhf/1.0-0-1 r-cran-dotcall64/i386/1.0-0-1 r-cran-downloader/0.4-4 r-cran-dplyr/amd64/0.8.5-1 r-cran-dplyr/arm64/0.8.5-1 r-cran-dplyr/armel/0.8.5-1 r-cran-dplyr/armhf/0.8.5-1 r-cran-dplyr/i386/0.8.5-1 r-cran-dqrng/amd64/0.2.1+dfsg-4 r-cran-dqrng/arm64/0.2.1+dfsg-4 r-cran-dqrng/armel/0.2.1+dfsg-4 r-cran-dqrng/armhf/0.2.1+dfsg-4 r-cran-dqrng/i386/0.2.1+dfsg-4 r-cran-drr/0.0.4-2 r-cran-dt/0.13+dfsg-3 r-cran-dygraphs/1.1.1.6+dfsg-2 r-cran-dynamictreecut/1.63-1-3 r-cran-dynlm/0.3.6-2 r-cran-e1071/amd64/1.7-3-1 r-cran-e1071/arm64/1.7-3-1 r-cran-e1071/armel/1.7-3-1 r-cran-e1071/armhf/1.7-3-1 r-cran-e1071/i386/1.7-3-1 r-cran-eaf/amd64/1.9-1-1 r-cran-eaf/arm64/1.9-1-1 r-cran-eaf/armel/1.9-1-1 r-cran-eaf/armhf/1.9-1-1 r-cran-eaf/i386/1.9-1-1 r-cran-earth/amd64/5.1.2-1 r-cran-earth/arm64/5.1.2-1 r-cran-earth/armel/5.1.2-1 r-cran-earth/armhf/5.1.2-1 r-cran-earth/i386/5.1.2-1 r-cran-eco/amd64/4.0-1-2 r-cran-eco/arm64/4.0-1-2 r-cran-eco/armel/4.0-1-2 r-cran-eco/armhf/4.0-1-2 r-cran-eco/i386/4.0-1-2 r-cran-ecodist/amd64/2.0.5-1 r-cran-ecodist/arm64/2.0.5-1 r-cran-ecodist/armel/2.0.5-1 r-cran-ecodist/armhf/2.0.5-1 r-cran-ecodist/i386/2.0.5-1 r-cran-effectsize/0.3.1-1 r-cran-egg/0.4.5-3 r-cran-ei/1.3-3-3 r-cran-eipack/amd64/0.2-1-1 r-cran-eipack/arm64/0.2-1-1 r-cran-eipack/armel/0.2-1-1 r-cran-eipack/armhf/0.2-1-1 r-cran-eipack/i386/0.2-1-1 r-cran-ellipse/0.4.1-3 r-cran-elliptic/1.4-0-2 r-cran-emmeans/1.4.6-2 r-cran-emoa/amd64/0.5-0.1-1 r-cran-emoa/arm64/0.5-0.1-1 r-cran-emoa/armel/0.5-0.1-1 r-cran-emoa/armhf/0.5-0.1-1 r-cran-emoa/i386/0.5-0.1-1 r-cran-energy/amd64/1.7-7-1 r-cran-energy/arm64/1.7-7-1 r-cran-energy/armel/1.7-7-1 r-cran-energy/armhf/1.7-7-1 r-cran-energy/i386/1.7-7-1 r-cran-epi/amd64/2.40-1 r-cran-epi/arm64/2.40-1 r-cran-epi/armel/2.40-1 r-cran-epi/armhf/2.40-1 r-cran-epi/i386/2.40-1 r-cran-epibasix/1.5-2 r-cran-epicalc/2.15.1.0-5 r-cran-epir/1.0-14-2 r-cran-epitools/1:0.5-10.1-2 r-cran-erm/amd64/1.0-1-1 r-cran-erm/arm64/1.0-1-1 r-cran-erm/armel/1.0-1-1 r-cran-erm/armhf/1.0-1-1 r-cran-erm/i386/1.0-1-1 r-cran-estimability/1.3-3 r-cran-etm/1.1-2 r-cran-evaluate/0.14-2 r-cran-evd/amd64/2.3-3-2 r-cran-evd/arm64/2.3-3-2 r-cran-evd/armel/2.3-3-2 r-cran-evd/armhf/2.3-3-2 r-cran-evd/i386/2.3-3-2 r-cran-exactranktests/amd64/0.8-31-2 r-cran-exactranktests/arm64/0.8-31-2 r-cran-exactranktests/armel/0.8-31-2 r-cran-exactranktests/armhf/0.8-31-2 r-cran-exactranktests/i386/0.8-31-2 r-cran-expint/amd64/0.1-6-1 r-cran-expint/arm64/0.1-6-1 r-cran-expint/armel/0.1-6-1 r-cran-expint/armhf/0.1-6-1 r-cran-expint/i386/0.1-6-1 r-cran-expm/amd64/0.999-4-1 r-cran-expm/arm64/0.999-4-1 r-cran-expm/armel/0.999-4-1 r-cran-expm/armhf/0.999-4-1 r-cran-expm/i386/0.999-4-1 r-cran-extradistr/amd64/1.8.11-1 r-cran-extradistr/arm64/1.8.11-1 r-cran-extradistr/armel/1.8.11-1 r-cran-extradistr/armhf/1.8.11-1 r-cran-extradistr/i386/1.8.11-1 r-cran-factominer/2.3-2 r-cran-fail/1.3-4 r-cran-fansi/amd64/0.4.1-1 r-cran-fansi/arm64/0.4.1-1 r-cran-fansi/armel/0.4.1-1 r-cran-fansi/armhf/0.4.1-1 r-cran-fansi/i386/0.4.1-1 r-cran-farver/amd64/2.0.3-1 r-cran-farver/arm64/2.0.3-1 r-cran-farver/armel/2.0.3-1 r-cran-farver/armhf/2.0.3-1 r-cran-farver/i386/2.0.3-1 r-cran-fastcluster/amd64/1.1.25-3 r-cran-fastcluster/arm64/1.1.25-3 r-cran-fastcluster/armel/1.1.25-3 r-cran-fastcluster/armhf/1.1.25-3 r-cran-fastcluster/i386/1.1.25-3 r-cran-fastica/amd64/1.2-2-2 r-cran-fastica/arm64/1.2-2-2 r-cran-fastica/armel/1.2-2-2 r-cran-fastica/armhf/1.2-2-2 r-cran-fastica/i386/1.2-2-2 r-cran-fastmap/amd64/1.0.1-2 r-cran-fastmap/arm64/1.0.1-2 r-cran-fastmap/armel/1.0.1-2 r-cran-fastmap/armhf/1.0.1-2 r-cran-fastmap/i386/1.0.1-2 r-cran-fastmatch/amd64/1.1-0-2 r-cran-fastmatch/arm64/1.1-0-2 r-cran-fastmatch/armel/1.1-0-2 r-cran-fastmatch/armhf/1.1-0-2 r-cran-fastmatch/i386/1.1-0-2 r-cran-fauxpas/0.5.0+dfsg-2 r-cran-fdrtool/amd64/1.2.15-1 r-cran-fdrtool/arm64/1.2.15-1 r-cran-fdrtool/armel/1.2.15-1 r-cran-fdrtool/armhf/1.2.15-1 r-cran-fdrtool/i386/1.2.15-1 r-cran-ffield/0.1.0-3 r-cran-fftw/1.0-6-2 r-cran-fields/amd64/10.3-1 r-cran-fields/arm64/10.3-1 r-cran-fields/armel/10.3-1 r-cran-fields/armhf/10.3-1 r-cran-fields/i386/10.3-1 r-cran-filehash/amd64/2.4-2-2 r-cran-filehash/arm64/2.4-2-2 r-cran-filehash/armel/2.4-2-2 r-cran-filehash/armhf/2.4-2-2 r-cran-filehash/i386/2.4-2-2 r-cran-fingerprint/amd64/3.5.7-2 r-cran-fingerprint/arm64/3.5.7-2 r-cran-fingerprint/armel/3.5.7-2 r-cran-fingerprint/armhf/3.5.7-2 r-cran-fingerprint/i386/3.5.7-2 r-cran-fit.models/0.5-14-3 r-cran-fitbitscraper/0.1.8-6 r-cran-fitcoach/1.0-4 r-cran-fitdistrplus/1.1-1-1 r-cran-flashclust/amd64/1.01-2-2 r-cran-flashclust/arm64/1.01-2-2 r-cran-flashclust/armel/1.01-2-2 r-cran-flashclust/armhf/1.01-2-2 r-cran-flashclust/i386/1.01-2-2 r-cran-flexmix/2.3-15-3 r-cran-fnn/amd64/1.1.3-1 r-cran-fnn/arm64/1.1.3-1 r-cran-fnn/armel/1.1.3-1 r-cran-fnn/armhf/1.1.3-1 r-cran-fnn/i386/1.1.3-1 r-cran-fontbitstreamvera/0.1.1+dfsg-4 r-cran-fontliberation/0.1.0+dfsg-4 r-cran-fontquiver/0.2.1-3 r-cran-forcats/0.5.0-2 r-cran-foreach/1.5.0-2 r-cran-forecast/amd64/8.12-1 r-cran-forecast/arm64/8.12-1 r-cran-forecast/armel/8.12-1 r-cran-forecast/armhf/8.12-1 r-cran-forecast/i386/8.12-1 r-cran-formatr/1.7-2 r-cran-formula/1.2-3-3 r-cran-fpc/2.2-5-2 r-cran-fracdiff/amd64/1.5-1-1 r-cran-fracdiff/arm64/1.5-1-1 r-cran-fracdiff/armel/1.5-1-1 r-cran-fracdiff/armhf/1.5-1-1 r-cran-fracdiff/i386/1.5-1-1 r-cran-freetypeharfbuzz/amd64/0.2.5+dfsg-2 r-cran-freetypeharfbuzz/arm64/0.2.5+dfsg-2 r-cran-freetypeharfbuzz/armel/0.2.5+dfsg-2 r-cran-freetypeharfbuzz/armhf/0.2.5+dfsg-2 r-cran-freetypeharfbuzz/i386/0.2.5+dfsg-2 r-cran-fs/amd64/1.4.1+dfsg-1 r-cran-fs/arm64/1.4.1+dfsg-1 r-cran-fs/armel/1.4.1+dfsg-1 r-cran-fs/armhf/1.4.1+dfsg-1 r-cran-fs/i386/1.4.1+dfsg-1 r-cran-fts/amd64/0.9.9.2-1 r-cran-fts/arm64/0.9.9.2-1 r-cran-fts/armel/0.9.9.2-1 r-cran-fts/armhf/0.9.9.2-1 r-cran-fts/i386/0.9.9.2-1 r-cran-furrr/0.1.0-3 r-cran-futile.logger/1.4.3-4 r-cran-futile.options/1.0.1-3 r-cran-future/1.17.0+dfsg-2 r-cran-future.apply/1.5.0-2 r-cran-future.batchtools/0.9.0+dfsg-2 r-cran-g.data/2.4-4 r-cran-gam/amd64/1.16.1-1 r-cran-gam/arm64/1.16.1-1 r-cran-gam/armel/1.16.1-1 r-cran-gam/armhf/1.16.1-1 r-cran-gam/i386/1.16.1-1 r-cran-gbm/amd64/2.1.5-1 r-cran-gbm/arm64/2.1.5-1 r-cran-gbm/armel/2.1.5-1 r-cran-gbm/armhf/2.1.5-1 r-cran-gbm/i386/2.1.5-1 r-cran-gbrd/amd64/0.4-11-1 r-cran-gbrd/arm64/0.4-11-1 r-cran-gbrd/armel/0.4-11-1 r-cran-gbrd/armhf/0.4-11-1 r-cran-gbrd/i386/0.4-11-1 r-cran-gclus/1.3.2-2 r-cran-gdtools/amd64/0.2.2-1 r-cran-gdtools/arm64/0.2.2-1 r-cran-gdtools/armel/0.2.2-1 r-cran-gdtools/armhf/0.2.2-1 r-cran-gdtools/i386/0.2.2-1 r-cran-gee/amd64/4.13-20-1 r-cran-gee/arm64/4.13-20-1 r-cran-gee/armel/4.13-20-1 r-cran-gee/armhf/4.13-20-1 r-cran-gee/i386/4.13-20-1 r-cran-geepack/amd64/1.3-1-1 r-cran-geepack/arm64/1.3-1-1 r-cran-geepack/armel/1.3-1-1 r-cran-geepack/armhf/1.3-1-1 r-cran-geepack/i386/1.3-1-1 r-cran-genabel.data/1.0.0-4 r-cran-genabel/amd64/1.8-0-3 r-cran-genabel/arm64/1.8-0-3 r-cran-genabel/armel/1.8-0-3 r-cran-genabel/armhf/1.8-0-3 r-cran-genabel/i386/1.8-0-3 r-cran-genetics/1.3.8.1.2-2 r-cran-geometry/amd64/0.4.5-1 r-cran-geometry/arm64/0.4.5-1 r-cran-geometry/armel/0.4.5-1 r-cran-geometry/armhf/0.4.5-1 r-cran-geometry/i386/0.4.5-1 r-cran-geosphere/amd64/1.5-10-1 r-cran-geosphere/arm64/1.5-10-1 r-cran-geosphere/armel/1.5-10-1 r-cran-geosphere/armhf/1.5-10-1 r-cran-geosphere/i386/1.5-10-1 r-cran-getopt/1.20.3-3 r-cran-ggally/1.5.0-2 r-cran-gganimate/1.0.5-3 r-cran-ggbeeswarm/0.6.0-3 r-cran-ggdendro/0.1-20+dfsg-3 r-cran-ggeffects/0.14.3-3 r-cran-ggforce/amd64/0.3.1-2 r-cran-ggforce/arm64/0.3.1-2 r-cran-ggforce/armel/0.3.1-2 r-cran-ggforce/armhf/0.3.1-2 r-cran-ggforce/i386/0.3.1-2 r-cran-ggm/2.5-2 r-cran-ggplot2/3.3.0+dfsg-2 r-cran-ggpubr/0.2.5-3 r-cran-ggraph/2.0.3-1 r-cran-ggrepel/amd64/0.8.2-1 r-cran-ggrepel/arm64/0.8.2-1 r-cran-ggrepel/armel/0.8.2-1 r-cran-ggrepel/armhf/0.8.2-1 r-cran-ggrepel/i386/0.8.2-1 r-cran-ggridges/0.5.2-2 r-cran-ggsci/2.9-3 r-cran-ggsignif/0.6.0-3 r-cran-ggthemes/4.2.0-2 r-cran-ggvis/0.4.5+dfsg-3 r-cran-gh/1.1.0-2 r-cran-git2r/amd64/0.27.1-1 r-cran-git2r/arm64/0.27.1-1 r-cran-git2r/armel/0.27.1-1 r-cran-git2r/armhf/0.27.1-1 r-cran-git2r/i386/0.27.1-1 r-cran-glasso/amd64/1.11-1 r-cran-glasso/arm64/1.11-1 r-cran-glasso/armel/1.11-1 r-cran-glasso/armhf/1.11-1 r-cran-glasso/i386/1.11-1 r-cran-glmmtmb/amd64/1.0.1-1 r-cran-glmmtmb/arm64/1.0.1-1 r-cran-glmmtmb/armel/1.0.1-1 r-cran-glmmtmb/armhf/1.0.1-1 r-cran-glmmtmb/i386/1.0.1-1 r-cran-glmnet/4.0-1 r-cran-globaloptions/0.1.1-2 r-cran-globals/0.12.5-2 r-cran-glue/1.4.1-1 r-cran-gmaps/0.2-5 r-cran-gmm/amd64/1.6-4-1 r-cran-gmm/arm64/1.6-4-1 r-cran-gmm/armel/1.6-4-1 r-cran-gmm/armhf/1.6-4-1 r-cran-gmm/i386/1.6-4-1 r-cran-gnm/amd64/1.1-1-2 r-cran-gnm/arm64/1.1-1-2 r-cran-gnm/armel/1.1-1-2 r-cran-gnm/armhf/1.1-1-2 r-cran-gnm/i386/1.1-1-2 r-cran-goftest/amd64/1.2-2-1 r-cran-goftest/arm64/1.2-2-1 r-cran-goftest/armel/1.2-2-1 r-cran-goftest/armhf/1.2-2-1 r-cran-goftest/i386/1.2-2-1 r-cran-googlevis/0.6.4+dfsg-2 r-cran-gower/amd64/0.2.1-1 r-cran-gower/arm64/0.2.1-1 r-cran-gower/armel/0.2.1-1 r-cran-gower/armhf/0.2.1-1 r-cran-gower/i386/0.2.1-1 r-cran-gparotation/2014.11-1-3 r-cran-gprofiler/0.7.0-2 r-cran-graphlayouts/amd64/0.7.0-1 r-cran-graphlayouts/arm64/0.7.0-1 r-cran-graphlayouts/armel/0.7.0-1 r-cran-graphlayouts/armhf/0.7.0-1 r-cran-graphlayouts/i386/0.7.0-1 r-cran-gridbase/0.4-7-5 r-cran-gridextra/2.3-3 r-cran-gridgraphics/0.5-0-2 r-cran-gridsvg/1.7-2-2 r-cran-grimport2/0.2-0-3 r-cran-gsa/1.03.1-2 r-cran-gsl/amd64/2.1-6-1 r-cran-gsl/arm64/2.1-6-1 r-cran-gsl/armel/2.1-6-1 r-cran-gsl/armhf/2.1-6-1 r-cran-gsl/i386/2.1-6-1 r-cran-gss/2.2-1-1 r-cran-gtable/0.3.0+dfsg-2 r-cran-guerry/1.7.0-2 r-cran-gwidgets/0.0-54.2-2 r-cran-gwidgetsrgtk2/0.0-86.1-1 r-cran-gwidgetstcltk/0.0-55.1-2 r-cran-haplo.stats/amd64/1.7.9-4 r-cran-haplo.stats/arm64/1.7.9-4 r-cran-haplo.stats/armhf/1.7.9-4 r-cran-haplo.stats/i386/1.7.9-4 r-cran-hash/2.2.6.1-3 r-cran-haven/amd64/2.2.0-1 r-cran-haven/arm64/2.2.0-1 r-cran-haven/armel/2.2.0-1 r-cran-haven/armhf/2.2.0-1 r-cran-haven/i386/2.2.0-1 r-cran-hdf5/amd64/1.6.10-4.1 r-cran-hdf5/arm64/1.6.10-4.1 r-cran-hdf5/armel/1.6.10-4.1 r-cran-hdf5/armhf/1.6.10-4.1 r-cran-hdf5/i386/1.6.10-4.1 r-cran-heatmaply/1.1.0+dfsg-2 r-cran-hexbin/amd64/1.28.1-1 r-cran-hexbin/arm64/1.28.1-1 r-cran-hexbin/armel/1.28.1-1 r-cran-hexbin/armhf/1.28.1-1 r-cran-hexbin/i386/1.28.1-1 r-cran-highr/0.8+dfsg-2 r-cran-hms/0.5.3-2 r-cran-hsaur3/1.0-9-3 r-cran-htmltable/1.13.3-2 r-cran-htmltools/0.4.0-2 r-cran-htmlwidgets/1.5.1+dfsg-2 r-cran-httpcode/0.3.0-2 r-cran-httpuv/1.5.2+dfsg-2 r-cran-httr/1.4.1-2 r-cran-huge/amd64/1.3.4.1-1 r-cran-huge/arm64/1.3.4.1-1 r-cran-huge/armel/1.3.4.1-1 r-cran-huge/armhf/1.3.4.1-1 r-cran-huge/i386/1.3.4.1-1 r-cran-hwriter/1.3.2-4 r-cran-hypergeo/1.2-13-4 r-cran-ica/1.0-2-3 r-cran-igraph/amd64/1.2.5-1 r-cran-igraph/arm64/1.2.5-1 r-cran-igraph/armel/1.2.5-1 r-cran-igraph/armhf/1.2.5-1 r-cran-igraph/i386/1.2.5-1 r-cran-ini/0.3.1-2 r-cran-inline/0.3.15-3 r-cran-insight/0.8.4-1 r-cran-int64/amd64/1.1.2-4 r-cran-int64/arm64/1.1.2-4 r-cran-int64/armel/1.1.2-4 r-cran-int64/armhf/1.1.2-4 r-cran-int64/i386/1.1.2-4 r-cran-interp/amd64/1.0-33-1 r-cran-interp/arm64/1.0-33-1 r-cran-interp/armel/1.0-33-1 r-cran-interp/armhf/1.0-33-1 r-cran-interp/i386/1.0-33-1 r-cran-intervals/amd64/0.15.2-1 r-cran-intervals/arm64/0.15.2-1 r-cran-intervals/armel/0.15.2-1 r-cran-intervals/armhf/0.15.2-1 r-cran-intervals/i386/0.15.2-1 r-cran-inum/1.0-1-2 r-cran-ipred/amd64/0.9-9-1 r-cran-ipred/arm64/0.9-9-1 r-cran-ipred/armel/0.9-9-1 r-cran-ipred/armhf/0.9-9-1 r-cran-ipred/i386/0.9-9-1 r-cran-irace/amd64/3.4.1-1 r-cran-irace/arm64/3.4.1-1 r-cran-irace/armel/3.4.1-1 r-cran-irace/armhf/3.4.1-1 r-cran-irace/i386/3.4.1-1 r-cran-irdisplay/0.7.0-3 r-cran-irkernel/1.1-2 r-cran-irlba/amd64/2.3.3-1 r-cran-irlba/arm64/2.3.3-1 r-cran-irlba/armel/2.3.3-1 r-cran-irlba/armhf/2.3.3-1 r-cran-irlba/i386/2.3.3-1 r-cran-iso/amd64/0.0-18-1 r-cran-iso/arm64/0.0-18-1 r-cran-iso/armel/0.0-18-1 r-cran-iso/armhf/0.0-18-1 r-cran-iso/i386/0.0-18-1 r-cran-isoband/amd64/0.2.1-1 r-cran-isoband/arm64/0.2.1-1 r-cran-isoband/armel/0.2.1-1 r-cran-isoband/armhf/0.2.1-1 r-cran-isoband/i386/0.2.1-1 r-cran-isocodes/2020.03.16-2 r-cran-isoweek/0.6-2-3 r-cran-iterators/1.0.12-2 r-cran-itertools/0.1-3-3 r-cran-jomo/2.7-1-1 r-cran-jpeg/amd64/0.1-8.1-1 r-cran-jpeg/arm64/0.1-8.1-1 r-cran-jpeg/armel/0.1-8.1-1 r-cran-jpeg/armhf/0.1-8.1-1 r-cran-jpeg/i386/0.1-8.1-1 r-cran-jrc/0.3.1-2 r-cran-jsonld/2.1+dfsg-2 r-cran-jsonlite/amd64/1.6.1+dfsg-1 r-cran-jsonlite/arm64/1.6.1+dfsg-1 r-cran-jsonlite/armel/1.6.1+dfsg-1 r-cran-jsonlite/armhf/1.6.1+dfsg-1 r-cran-jsonlite/i386/1.6.1+dfsg-1 r-cran-kaos/0.1.2-2 r-cran-kedd/1.0.3-2 r-cran-kernlab/amd64/0.9-29-1 r-cran-kernlab/arm64/0.9-29-1 r-cran-kernlab/armel/0.9-29-1 r-cran-kernlab/armhf/0.9-29-1 r-cran-kernlab/i386/0.9-29-1 r-cran-km.ci/amd64/0.5-2-2 r-cran-km.ci/arm64/0.5-2-2 r-cran-km.ci/armel/0.5-2-2 r-cran-km.ci/armhf/0.5-2-2 r-cran-km.ci/i386/0.5-2-2 r-cran-kmi/0.5.5-2 r-cran-kmsurv/amd64/0.1-5-2 r-cran-kmsurv/arm64/0.1-5-2 r-cran-kmsurv/armel/0.1-5-2 r-cran-kmsurv/armhf/0.1-5-2 r-cran-kmsurv/i386/0.1-5-2 r-cran-knitr/1.28+dfsg-2 r-cran-ks/amd64/1.11.7-1 r-cran-ks/arm64/1.11.7-1 r-cran-ks/armel/1.11.7-1 r-cran-ks/armhf/1.11.7-1 r-cran-ks/i386/1.11.7-1 r-cran-kutils/1.70+dfsg-2 r-cran-labeling/0.3-4 r-cran-lambda.r/1.2.4-2 r-cran-lasso2/amd64/1.2-20-1 r-cran-lasso2/arm64/1.2-20-1 r-cran-lasso2/armel/1.2-20-1 r-cran-lasso2/armhf/1.2-20-1 r-cran-lasso2/i386/1.2-20-1 r-cran-later/amd64/1.0.0+dfsg-2 r-cran-later/arm64/1.0.0+dfsg-2 r-cran-later/armel/1.0.0+dfsg-2 r-cran-later/armhf/1.0.0+dfsg-2 r-cran-later/i386/1.0.0+dfsg-2 r-cran-lava/1.6.7-2 r-cran-lavaan/0.6.6-1 r-cran-lavasearch2/amd64/1.5.5+dfsg-1 r-cran-lavasearch2/arm64/1.5.5+dfsg-1 r-cran-lavasearch2/armel/1.5.5+dfsg-1 r-cran-lavasearch2/armhf/1.5.5+dfsg-1 r-cran-lavasearch2/i386/1.5.5+dfsg-1 r-cran-lazyeval/amd64/0.2.2-1 r-cran-lazyeval/arm64/0.2.2-1 r-cran-lazyeval/armel/0.2.2-1 r-cran-lazyeval/armhf/0.2.2-1 r-cran-lazyeval/i386/0.2.2-1 r-cran-leaps/amd64/3.1-1 r-cran-leaps/arm64/3.1-1 r-cran-leaps/armel/3.1-1 r-cran-leaps/armhf/3.1-1 r-cran-leaps/i386/3.1-1 r-cran-learnbayes/2.15.1-4 r-cran-leiden/0.3.3+dfsg-2 r-cran-lexrankr/amd64/0.5.2-1 r-cran-lexrankr/arm64/0.5.2-1 r-cran-lexrankr/armel/0.5.2-1 r-cran-lexrankr/armhf/0.5.2-1 r-cran-lexrankr/i386/0.5.2-1 r-cran-lhs/amd64/1.0.2-1 r-cran-lhs/arm64/1.0.2-1 r-cran-lhs/armel/1.0.2-1 r-cran-lhs/armhf/1.0.2-1 r-cran-lhs/i386/1.0.2-1 r-cran-libcoin/amd64/1.0-5-1 r-cran-libcoin/arm64/1.0-5-1 r-cran-libcoin/armel/1.0-5-1 r-cran-libcoin/armhf/1.0-5-1 r-cran-libcoin/i386/1.0-5-1 r-cran-lifecycle/0.2.0-2 r-cran-linprog/amd64/0.9-2-1 r-cran-linprog/arm64/0.9-2-1 r-cran-linprog/armel/0.9-2-1 r-cran-linprog/armhf/0.9-2-1 r-cran-linprog/i386/0.9-2-1 r-cran-lisreltor/0.1.4-3 r-cran-listenv/0.8.0+dfsg-1 r-cran-lmertest/3.1-2-2 r-cran-locfit/amd64/1.5-9.4-2 r-cran-locfit/arm64/1.5-9.4-2 r-cran-locfit/armel/1.5-9.4-2 r-cran-locfit/armhf/1.5-9.4-2 r-cran-locfit/i386/1.5-9.4-2 r-cran-logcondens/2.1.5-3 r-cran-logging/0.10-108-2 r-cran-logspline/amd64/2.1.16-1 r-cran-logspline/arm64/2.1.16-1 r-cran-logspline/armel/2.1.16-1 r-cran-logspline/armhf/2.1.16-1 r-cran-logspline/i386/2.1.16-1 r-cran-loo/2.2.0-2 r-cran-lpsolve/amd64/5.6.15-1 r-cran-lpsolve/arm64/5.6.15-1 r-cran-lpsolve/armel/5.6.15-1 r-cran-lpsolve/armhf/5.6.15-1 r-cran-lpsolve/i386/5.6.15-1 r-cran-lsei/amd64/1.2-0.1-1 r-cran-lsei/arm64/1.2-0.1-1 r-cran-lsei/armel/1.2-0.1-1 r-cran-lsei/armhf/1.2-0.1-1 r-cran-lsei/i386/1.2-0.1-1 r-cran-lsmeans/2.30-0-2 r-cran-lubridate/amd64/1.7.8-1 r-cran-lubridate/arm64/1.7.8-1 r-cran-lubridate/armel/1.7.8-1 r-cran-lubridate/armhf/1.7.8-1 r-cran-lubridate/i386/1.7.8-1 r-cran-luminescence/amd64/0.9.7-1 r-cran-luminescence/arm64/0.9.7-1 r-cran-luminescence/armel/0.9.7-1 r-cran-luminescence/armhf/0.9.7-1 r-cran-luminescence/i386/0.9.7-1 r-cran-lwgeom/0.2-4-1 r-cran-magic/1.5-9-2 r-cran-magick/amd64/2.3+dfsg-1 r-cran-magick/arm64/2.3+dfsg-1 r-cran-magick/armel/2.3+dfsg-1 r-cran-magick/armhf/2.3+dfsg-1 r-cran-magick/i386/2.3+dfsg-1 r-cran-magrittr/1.5-6 r-cran-maldiquant/amd64/1.19.3-1 r-cran-maldiquant/arm64/1.19.3-1 r-cran-maldiquant/armel/1.19.3-1 r-cran-maldiquant/armhf/1.19.3-1 r-cran-maldiquant/i386/1.19.3-1 r-cran-maldiquantforeign/0.12-2 r-cran-manipulatewidgets/0.9.0-3 r-cran-mapdata/amd64/2.3.0-2 r-cran-mapdata/arm64/2.3.0-2 r-cran-mapdata/armel/2.3.0-2 r-cran-mapdata/armhf/2.3.0-2 r-cran-mapdata/i386/2.3.0-2 r-cran-mapproj/amd64/1.2.7-1 r-cran-mapproj/arm64/1.2.7-1 r-cran-mapproj/armel/1.2.7-1 r-cran-mapproj/armhf/1.2.7-1 r-cran-mapproj/i386/1.2.7-1 r-cran-maps/amd64/3.3.0-2 r-cran-maps/arm64/3.3.0-2 r-cran-maps/armel/3.3.0-2 r-cran-maps/armhf/3.3.0-2 r-cran-maps/i386/3.3.0-2 r-cran-maptools/1:1.0-1+dfsg-1 r-cran-maptree/1.4-7-4 r-cran-markdown/amd64/1.1+dfsg-1 r-cran-markdown/arm64/1.1+dfsg-1 r-cran-markdown/armel/1.1+dfsg-1 r-cran-markdown/armhf/1.1+dfsg-1 r-cran-markdown/i386/1.1+dfsg-1 r-cran-mass/amd64/7.3-51.6-1 r-cran-mass/arm64/7.3-51.6-1 r-cran-mass/armel/7.3-51.6-1 r-cran-mass/armhf/7.3-51.6-1 r-cran-mass/i386/7.3-51.6-1 r-cran-matching/amd64/4.9-7-1 r-cran-matching/arm64/4.9-7-1 r-cran-matching/armel/4.9-7-1 r-cran-matching/armhf/4.9-7-1 r-cran-matching/i386/4.9-7-1 r-cran-matchit/3.0.2-5 r-cran-matlab/1.0.2-3 r-cran-matrixcalc/1.0.3-5 r-cran-matrixmodels/0.4-1-3 r-cran-matrixstats/amd64/0.56.0-1 r-cran-matrixstats/arm64/0.56.0-1 r-cran-matrixstats/armel/0.56.0-1 r-cran-matrixstats/armhf/0.56.0-1 r-cran-matrixstats/i386/0.56.0-1 r-cran-maxlik/1.3-8-2 r-cran-maxstat/amd64/0.7-25-2 r-cran-maxstat/arm64/0.7-25-2 r-cran-maxstat/armel/0.7-25-2 r-cran-maxstat/armhf/0.7-25-2 r-cran-maxstat/i386/0.7-25-2 r-cran-mclust/amd64/5.4.6-1 r-cran-mclust/arm64/5.4.6-1 r-cran-mclust/armel/5.4.6-1 r-cran-mclust/armhf/5.4.6-1 r-cran-mclust/i386/5.4.6-1 r-cran-mcmc/amd64/0.9-7-1 r-cran-mcmc/arm64/0.9-7-1 r-cran-mcmc/armel/0.9-7-1 r-cran-mcmc/armhf/0.9-7-1 r-cran-mcmc/i386/0.9-7-1 r-cran-mcmcpack/amd64/1.4-7-1 r-cran-mcmcpack/arm64/1.4-7-1 r-cran-mcmcpack/armel/1.4-7-1 r-cran-mcmcpack/armhf/1.4-7-1 r-cran-mcmcpack/i386/1.4-7-1 r-cran-mda/amd64/0.5-1 r-cran-mda/arm64/0.5-1 r-cran-mda/armel/0.5-1 r-cran-mda/armhf/0.5-1 r-cran-mda/i386/0.5-1 r-cran-medadherence/amd64/1.03-5 r-cran-medadherence/arm64/1.03-5 r-cran-medadherence/armel/1.03-5 r-cran-medadherence/armhf/1.03-5 r-cran-medadherence/i386/1.03-5 r-cran-mediana/1.0.8-3 r-cran-memoise/1.1.0-3 r-cran-mertools/0.5.0-2 r-cran-metafor/2.4-0-2 r-cran-metamix/amd64/0.3-2 r-cran-metamix/arm64/0.3-2 r-cran-metamix/armel/0.3-2 r-cran-metamix/armhf/0.3-2 r-cran-metamix/i386/0.3-2 r-cran-metap/1.3-2 r-cran-metrics/0.1.4-2 r-cran-mets/amd64/1.2.7.1-1 r-cran-mets/arm64/1.2.7.1-1 r-cran-mets/armel/1.2.7.1-1 r-cran-mets/armhf/1.2.7.1-1 r-cran-mets/i386/1.2.7.1-1 r-cran-mfilter/0.1.5-2 r-cran-mi/1.0-8 r-cran-mice/3.9.0-2 r-cran-mime/amd64/0.9-1 r-cran-mime/arm64/0.9-1 r-cran-mime/armel/0.9-1 r-cran-mime/armhf/0.9-1 r-cran-mime/i386/0.9-1 r-cran-minerva/amd64/1.5.8-2 r-cran-minerva/arm64/1.5.8-2 r-cran-minerva/armel/1.5.8-2 r-cran-minerva/armhf/1.5.8-2 r-cran-minerva/i386/1.5.8-2 r-cran-miniui/0.1.1.1-3 r-cran-minpack.lm/amd64/1.2-1-4 r-cran-minpack.lm/arm64/1.2-1-4 r-cran-minpack.lm/armel/1.2-1-4 r-cran-minpack.lm/armhf/1.2-1-4 r-cran-minpack.lm/i386/1.2-1-4 r-cran-minqa/amd64/1.2.4-1 r-cran-minqa/arm64/1.2.4-1 r-cran-minqa/armel/1.2.4-1 r-cran-minqa/armhf/1.2.4-1 r-cran-minqa/i386/1.2.4-1 r-cran-misctools/0.6-26-2 r-cran-mitml/0.3-7-3 r-cran-mitools/2.4-2 r-cran-mixtools/amd64/1.2.0-1 r-cran-mixtools/arm64/1.2.0-1 r-cran-mixtools/armel/1.2.0-1 r-cran-mixtools/armhf/1.2.0-1 r-cran-mixtools/i386/1.2.0-1 r-cran-mlbench/amd64/2.1-1-3 r-cran-mlbench/arm64/2.1-1-3 r-cran-mlbench/armel/2.1-1-3 r-cran-mlbench/armhf/2.1-1-3 r-cran-mlbench/i386/2.1-1-3 r-cran-mlmetrics/1.1.1-3 r-cran-mlmrev/1.0-8-2 r-cran-mlr/amd64/2.17.1+dfsg-1 r-cran-mlr/arm64/2.17.1+dfsg-1 r-cran-mlr/armel/2.17.1+dfsg-1 r-cran-mlr/armhf/2.17.1+dfsg-1 r-cran-mlr/i386/2.17.1+dfsg-1 r-cran-mnp/amd64/3.1-0-2 r-cran-mnp/arm64/3.1-0-2 r-cran-mnp/armel/3.1-0-2 r-cran-mnp/armhf/3.1-0-2 r-cran-mnp/i386/3.1-0-2 r-cran-mockery/0.4.2+dfsg-2 r-cran-mockr/0.1-3 r-cran-modeldata/0.0.1-3 r-cran-modelmetrics/amd64/1.2.2.2-1 r-cran-modelmetrics/arm64/1.2.2.2-1 r-cran-modelmetrics/armel/1.2.2.2-1 r-cran-modelmetrics/armhf/1.2.2.2-1 r-cran-modelmetrics/i386/1.2.2.2-1 r-cran-modelr/0.1.8-1 r-cran-modeltools/0.2-23-2 r-cran-msm/amd64/1.6.8-1 r-cran-msm/arm64/1.6.8-1 r-cran-msm/armel/1.6.8-1 r-cran-msm/armhf/1.6.8-1 r-cran-msm/i386/1.6.8-1 r-cran-multcompview/0.1-8-2 r-cran-multicool/amd64/0.1-11-2 r-cran-multicool/arm64/0.1-11-2 r-cran-multicool/armel/0.1-11-2 r-cran-multicool/armhf/0.1-11-2 r-cran-multicool/i386/0.1-11-2 r-cran-multicore/amd64/0.2-1 r-cran-multicore/arm64/0.2-1 r-cran-multicore/armel/0.2-1 r-cran-multicore/armhf/0.2-1 r-cran-multicore/i386/0.2-1 r-cran-multidimbio/1.2.2-2 r-cran-multilevel/2.6-3 r-cran-munsell/0.5.0-2 r-cran-mutoss/0.1-12-3 r-cran-mvnfast/amd64/0.2.5+dfsg-1 r-cran-mvnfast/arm64/0.2.5+dfsg-1 r-cran-mvnfast/armel/0.2.5+dfsg-1 r-cran-mvnfast/armhf/0.2.5+dfsg-1 r-cran-mvnfast/i386/0.2.5+dfsg-1 r-cran-mvnormtest/amd64/0.1-9-1 r-cran-mvnormtest/arm64/0.1-9-1 r-cran-mvnormtest/armel/0.1-9-1 r-cran-mvnormtest/armhf/0.1-9-1 r-cran-mvnormtest/i386/0.1-9-1 r-cran-natserv/1.0.0+dfsg-1 r-cran-ncdf4/amd64/1.17-1 r-cran-ncdf4/arm64/1.17-1 r-cran-ncdf4/armel/1.17-1 r-cran-ncdf4/armhf/1.17-1 r-cran-ncdf4/i386/1.17-1 r-cran-ncdfgeom/1.1.0-3 r-cran-ncmeta/0.2.5-1 r-cran-nfactors/2.4.1-2 r-cran-nleqslv/amd64/3.3.2-1 r-cran-nleqslv/arm64/3.3.2-1 r-cran-nleqslv/armel/3.3.2-1 r-cran-nleqslv/armhf/3.3.2-1 r-cran-nleqslv/i386/3.3.2-1 r-cran-nloptr/amd64/1.2.2.1-1 r-cran-nloptr/arm64/1.2.2.1-1 r-cran-nloptr/armel/1.2.2.1-1 r-cran-nloptr/armhf/1.2.2.1-1 r-cran-nloptr/i386/1.2.2.1-1 r-cran-nlp/0.2-0-3 r-cran-nmf/amd64/0.22.0-1 r-cran-nmf/arm64/0.22.0-1 r-cran-nmf/armel/0.22.0-1 r-cran-nmf/armhf/0.22.0-1 r-cran-nmf/i386/0.22.0-1 r-cran-nnet/amd64/7.3-14-1 r-cran-nnet/arm64/7.3-14-1 r-cran-nnet/armel/7.3-14-1 r-cran-nnet/armhf/7.3-14-1 r-cran-nnet/i386/7.3-14-1 r-cran-nnls/amd64/1.4-3 r-cran-nnls/arm64/1.4-3 r-cran-nnls/armel/1.4-3 r-cran-nnls/armhf/1.4-3 r-cran-nnls/i386/1.4-3 r-cran-nortest/1.0-4-3 r-cran-nozzle.r1/1.1-1+dfsg-4 r-cran-npsurv/0.4-0.1-2 r-cran-numderiv/2016.8-1.1-3 r-cran-openmx/amd64/2.17.3-1 r-cran-openmx/arm64/2.17.3-1 r-cran-openmx/armhf/2.17.3-1 r-cran-openmx/i386/2.17.3-1 r-cran-openssl/amd64/1.4.1+dfsg-2 r-cran-openssl/arm64/1.4.1+dfsg-2 r-cran-openssl/armel/1.4.1+dfsg-2 r-cran-openssl/armhf/1.4.1+dfsg-2 r-cran-openssl/i386/1.4.1+dfsg-2 r-cran-openxlsx/amd64/4.1.5-1 r-cran-openxlsx/arm64/4.1.5-1 r-cran-openxlsx/armel/4.1.5-1 r-cran-openxlsx/armhf/4.1.5-1 r-cran-openxlsx/i386/4.1.5-1 r-cran-optparse/1.6.6-2 r-cran-ordinal/amd64/2019.12-10-1 r-cran-ordinal/arm64/2019.12-10-1 r-cran-ordinal/armel/2019.12-10-1 r-cran-ordinal/armhf/2019.12-10-1 r-cran-ordinal/i386/2019.12-10-1 r-cran-packrat/0.5.0-3 r-cran-pan/amd64/1.6-1 r-cran-pan/arm64/1.6-1 r-cran-pan/armel/1.6-1 r-cran-pan/armhf/1.6-1 r-cran-pan/i386/1.6-1 r-cran-parallelmap/1.5.0-3 r-cran-parameters/0.7.0-1 r-cran-paramhelpers/amd64/1.14-1 r-cran-paramhelpers/arm64/1.14-1 r-cran-paramhelpers/armel/1.14-1 r-cran-paramhelpers/armhf/1.14-1 r-cran-paramhelpers/i386/1.14-1 r-cran-parmigene/amd64/1.0.2-2 r-cran-parmigene/arm64/1.0.2-2 r-cran-parmigene/armel/1.0.2-2 r-cran-parmigene/armhf/1.0.2-2 r-cran-parmigene/i386/1.0.2-2 r-cran-parsetools/0.1.3-2 r-cran-party/amd64/1.3-4-1 r-cran-party/arm64/1.3-4-1 r-cran-party/armel/1.3-4-1 r-cran-party/armhf/1.3-4-1 r-cran-party/i386/1.3-4-1 r-cran-partykit/amd64/1.2-7-1 r-cran-partykit/arm64/1.2-7-1 r-cran-partykit/armel/1.2-7-1 r-cran-partykit/armhf/1.2-7-1 r-cran-partykit/i386/1.2-7-1 r-cran-patchwork/1.0.0-4 r-cran-pbapply/1.4-2-2 r-cran-pbdzmq/amd64/0.3.3+dfsg-1 r-cran-pbdzmq/arm64/0.3.3+dfsg-1 r-cran-pbdzmq/armel/0.3.3+dfsg-1 r-cran-pbdzmq/armhf/0.3.3+dfsg-1 r-cran-pbdzmq/i386/0.3.3+dfsg-1 r-cran-pbivnorm/amd64/0.6.0-3 r-cran-pbivnorm/arm64/0.6.0-3 r-cran-pbivnorm/armel/0.6.0-3 r-cran-pbivnorm/armhf/0.6.0-3 r-cran-pbivnorm/i386/0.6.0-3 r-cran-pbkrtest/0.4-8.6-2 r-cran-pbmcapply/amd64/1.5.0-1 r-cran-pbmcapply/arm64/1.5.0-1 r-cran-pbmcapply/armel/1.5.0-1 r-cran-pbmcapply/armhf/1.5.0-1 r-cran-pbmcapply/i386/1.5.0-1 r-cran-pcapp/amd64/1.9-73-2 r-cran-pcapp/arm64/1.9-73-2 r-cran-pcapp/armel/1.9-73-2 r-cran-pcapp/armhf/1.9-73-2 r-cran-pcapp/i386/1.9-73-2 r-cran-pcict/amd64/0.5-4.1-1 r-cran-pcict/arm64/0.5-4.1-1 r-cran-pcict/armel/0.5-4.1-1 r-cran-pcict/armhf/0.5-4.1-1 r-cran-pcict/i386/0.5-4.1-1 r-cran-pdftools/amd64/2.3-1 r-cran-pdftools/arm64/2.3-1 r-cran-pdftools/armel/2.3-1 r-cran-pdftools/armhf/2.3-1 r-cran-pdftools/i386/2.3-1 r-cran-performance/0.4.6-2 r-cran-permute/0.9-5-2 r-cran-phangorn/amd64/2.5.5-1 r-cran-phangorn/arm64/2.5.5-1 r-cran-phangorn/armel/2.5.5-1 r-cran-phangorn/armhf/2.5.5-1 r-cran-phangorn/i386/2.5.5-1 r-cran-pheatmap/1.0.12-2 r-cran-phylobase/amd64/0.8.10-1 r-cran-phylobase/arm64/0.8.10-1 r-cran-phylobase/armel/0.8.10-1 r-cran-phylobase/armhf/0.8.10-1 r-cran-phylobase/i386/0.8.10-1 r-cran-phytools/0.7-20-2 r-cran-pillar/1.4.4-2 r-cran-pixmap/amd64/0.4-11-2 r-cran-pixmap/arm64/0.4-11-2 r-cran-pixmap/armel/0.4-11-2 r-cran-pixmap/armhf/0.4-11-2 r-cran-pixmap/i386/0.4-11-2 r-cran-pkgbuild/1.0.8-2 r-cran-pkgcond/0.1.0-3 r-cran-pkgconfig/2.0.3-2 r-cran-pkgkitten/0.1.5-2 r-cran-pkgload/1.0.2-2 r-cran-pkgmaker/0.31.1-2 r-cran-pki/amd64/0.1-7-1 r-cran-pki/arm64/0.1-7-1 r-cran-pki/armel/0.1-7-1 r-cran-pki/armhf/0.1-7-1 r-cran-pki/i386/0.1-7-1 r-cran-plm/2.2-3-2 r-cran-plogr/0.2.0-3 r-cran-plotly/4.9.2.1+dfsg-2 r-cran-plotmo/3.5.7-2 r-cran-plotrix/3.7-8-2 r-cran-pls/2.7-2-2 r-cran-plumber/0.4.6-2 r-cran-plyr/1.8.6-2 r-cran-png/amd64/0.1-7-3 r-cran-png/arm64/0.1-7-3 r-cran-png/armel/0.1-7-3 r-cran-png/armhf/0.1-7-3 r-cran-png/i386/0.1-7-3 r-cran-polyclip/amd64/1.10-0-1 r-cran-polyclip/arm64/1.10-0-1 r-cran-polyclip/armel/1.10-0-1 r-cran-polyclip/armhf/1.10-0-1 r-cran-polyclip/i386/1.10-0-1 r-cran-polycor/0.7-10-2 r-cran-polycub/amd64/0.7.1-1 r-cran-polycub/arm64/0.7.1-1 r-cran-polycub/armel/0.7.1-1 r-cran-polycub/armhf/0.7.1-1 r-cran-polycub/i386/0.7.1-1 r-cran-polynom/1.4-0-3 r-cran-popepi/0.4.8+dfsg-2 r-cran-postlogic/0.1.0.1-3 r-cran-powerlaw/0.70.6-2 r-cran-prabclus/2.3-2-2 r-cran-pracma/2.2.9-2 r-cran-praise/1.0.0-4 r-cran-prediction/0.3.14-2 r-cran-prettycode/1.1.0-2 r-cran-prettyr/2.2-3-2 r-cran-prettyunits/1.1.1-2 r-cran-princurve/amd64/2.1.4-1 r-cran-princurve/arm64/2.1.4-1 r-cran-princurve/armel/2.1.4-1 r-cran-princurve/armhf/2.1.4-1 r-cran-princurve/i386/2.1.4-1 r-cran-proc/amd64/1.16.2-2 r-cran-proc/arm64/1.16.2-2 r-cran-proc/armel/1.16.2-2 r-cran-proc/armhf/1.16.2-2 r-cran-proc/i386/1.16.2-2 r-cran-processx/amd64/3.4.2-1 r-cran-processx/arm64/3.4.2-1 r-cran-processx/armel/3.4.2-1 r-cran-processx/armhf/3.4.2-1 r-cran-processx/i386/3.4.2-1 r-cran-prodlim/amd64/2019.11.13-1 r-cran-prodlim/arm64/2019.11.13-1 r-cran-prodlim/armel/2019.11.13-1 r-cran-prodlim/armhf/2019.11.13-1 r-cran-prodlim/i386/2019.11.13-1 r-cran-profilemodel/0.6.0-2 r-cran-progress/1.2.2-2 r-cran-projpred/amd64/1.1.6-1 r-cran-projpred/arm64/1.1.6-1 r-cran-projpred/armel/1.1.6-1 r-cran-projpred/armhf/1.1.6-1 r-cran-projpred/i386/1.1.6-1 r-cran-promises/amd64/1.1.0-1 r-cran-promises/arm64/1.1.0-1 r-cran-promises/armel/1.1.0-1 r-cran-promises/armhf/1.1.0-1 r-cran-promises/i386/1.1.0-1 r-cran-propclust/amd64/1.4-6-1 r-cran-propclust/arm64/1.4-6-1 r-cran-propclust/armel/1.4-6-1 r-cran-propclust/armhf/1.4-6-1 r-cran-propclust/i386/1.4-6-1 r-cran-proto/1.0.0-3 r-cran-ps/amd64/1.3.3-1 r-cran-ps/arm64/1.3.3-1 r-cran-ps/armel/1.3.3-1 r-cran-ps/armhf/1.3.3-1 r-cran-ps/i386/1.3.3-1 r-cran-pscbs/0.65.0-3 r-cran-pscl/amd64/1.5.5-1 r-cran-pscl/arm64/1.5.5-1 r-cran-pscl/armel/1.5.5-1 r-cran-pscl/armhf/1.5.5-1 r-cran-pscl/i386/1.5.5-1 r-cran-psy/1.1-5 r-cran-psych/1.9.12.31-2 r-cran-psychometric/amd64/2.2-1 r-cran-psychometric/arm64/2.2-1 r-cran-psychometric/armel/2.2-1 r-cran-psychometric/armhf/2.2-1 r-cran-psychometric/i386/2.2-1 r-cran-psychotools/amd64/0.5-1-1 r-cran-psychotools/arm64/0.5-1-1 r-cran-psychotools/armel/0.5-1-1 r-cran-psychotools/armhf/0.5-1-1 r-cran-psychotools/i386/0.5-1-1 r-cran-psychotree/0.15-3-2 r-cran-psychtools/1.9.12-3 r-cran-psyphy/0.1-9-3 r-cran-purrr/amd64/0.3.4-1 r-cran-purrr/arm64/0.3.4-1 r-cran-purrr/armel/0.3.4-1 r-cran-purrr/armhf/0.3.4-1 r-cran-purrr/i386/0.3.4-1 r-cran-purrrlyr/amd64/0.0.6-1 r-cran-purrrlyr/arm64/0.0.6-1 r-cran-purrrlyr/armel/0.0.6-1 r-cran-purrrlyr/armhf/0.0.6-1 r-cran-purrrlyr/i386/0.0.6-1 r-cran-purrrogress/0.1.1-3 r-cran-pvclust/2.2-0-2 r-cran-pwr/1.3-0+dfsg-1 r-cran-pwt/7.1.1-7 r-cran-pwt8/8.1.1-5 r-cran-pwt9/9.1-0-2 r-cran-qap/amd64/0.1-1-1 r-cran-qap/arm64/0.1-1-1 r-cran-qap/armel/0.1-1-1 r-cran-qap/armhf/0.1-1-1 r-cran-qap/i386/0.1-1-1 r-cran-qgraph/amd64/1.6.5-1 r-cran-qgraph/arm64/1.6.5-1 r-cran-qgraph/armhf/1.6.5-1 r-cran-qgraph/i386/1.6.5-1 r-cran-qpdf/amd64/1.1+dfsg-1 r-cran-qpdf/arm64/1.1+dfsg-1 r-cran-qpdf/armel/1.1+dfsg-1 r-cran-qpdf/armhf/1.1+dfsg-1 r-cran-qpdf/i386/1.1+dfsg-1 r-cran-qqman/0.1.4-7 r-cran-qtl/amd64/1.46-2-1 r-cran-qtl/arm64/1.46-2-1 r-cran-qtl/armel/1.46-2-1 r-cran-qtl/armhf/1.46-2-1 r-cran-qtl/i386/1.46-2-1 r-cran-quantmod/0.4.17-2 r-cran-quantreg/amd64/5.55-1 r-cran-quantreg/arm64/5.55-1 r-cran-quantreg/armel/5.55-1 r-cran-quantreg/armhf/5.55-1 r-cran-quantreg/i386/5.55-1 r-cran-qvcalc/1.0.2-2 r-cran-r.cache/0.14.0-2 r-cran-r.methodss3/1.8.0-2 r-cran-r.oo/1.23.0-2 r-cran-r.utils/2.9.2-2 r-cran-r2d2/1.0-0-3 r-cran-r6/2.4.1-2 r-cran-randomfields/amd64/3.3.8-1 r-cran-randomfields/arm64/3.3.8-1 r-cran-randomfields/armel/3.3.8-1 r-cran-randomfields/armhf/3.3.8-1 r-cran-randomfields/i386/3.3.8-1 r-cran-randomfieldsutils/amd64/0.5.3-1 r-cran-randomfieldsutils/arm64/0.5.3-1 r-cran-randomfieldsutils/armel/0.5.3-1 r-cran-randomfieldsutils/armhf/0.5.3-1 r-cran-randomfieldsutils/i386/0.5.3-1 r-cran-randomforest/amd64/4.6-14-2 r-cran-randomforest/arm64/4.6-14-2 r-cran-randomforest/armel/4.6-14-2 r-cran-randomforest/armhf/4.6-14-2 r-cran-randomforest/i386/4.6-14-2 r-cran-randomglm/amd64/1.02-1-1 r-cran-randomglm/arm64/1.02-1-1 r-cran-randomglm/armel/1.02-1-1 r-cran-randomglm/armhf/1.02-1-1 r-cran-randomglm/i386/1.02-1-1 r-cran-ranger/amd64/0.12.1-3 r-cran-ranger/arm64/0.12.1-3 r-cran-ranger/armel/0.12.1-3 r-cran-ranger/armhf/0.12.1-3 r-cran-ranger/i386/0.12.1-3 r-cran-rann/amd64/2.6.1-1 r-cran-rann/arm64/2.6.1-1 r-cran-rann/armel/2.6.1-1 r-cran-rann/armhf/2.6.1-1 r-cran-rann/i386/2.6.1-1 r-cran-rappdirs/amd64/0.3.1-1 r-cran-rappdirs/arm64/0.3.1-1 r-cran-rappdirs/armel/0.3.1-1 r-cran-rappdirs/armhf/0.3.1-1 r-cran-rappdirs/i386/0.3.1-1 r-cran-raschsampler/amd64/0.8-8-2 r-cran-raschsampler/arm64/0.8-8-2 r-cran-raschsampler/armel/0.8-8-2 r-cran-raschsampler/armhf/0.8-8-2 r-cran-raschsampler/i386/0.8-8-2 r-cran-raster/3.1-5-2 r-cran-rcarb/0.1.3-2 r-cran-rcdklibs/2.3+dfsg-4 r-cran-rcmdcheck/1.3.3-2 r-cran-rcmdrmisc/2.7-0-3 r-cran-rcppannoy/amd64/0.0.16-2 r-cran-rcppannoy/arm64/0.0.16-2 r-cran-rcppannoy/armel/0.0.16-2 r-cran-rcppannoy/armhf/0.0.16-2 r-cran-rcppannoy/i386/0.0.16-2 r-cran-rcpparmadillo/0.9.880.1.0-1 r-cran-rcppeigen/amd64/0.3.3.7.0-1 r-cran-rcppeigen/arm64/0.3.3.7.0-1 r-cran-rcppeigen/armel/0.3.3.7.0-1 r-cran-rcppeigen/armhf/0.3.3.7.0-1 r-cran-rcppeigen/i386/0.3.3.7.0-1 r-cran-rcppgsl/amd64/0.3.7-1 r-cran-rcppgsl/arm64/0.3.7-1 r-cran-rcppgsl/armel/0.3.7-1 r-cran-rcppgsl/armhf/0.3.7-1 r-cran-rcppgsl/i386/0.3.7-1 r-cran-rcppparallel/amd64/5.0.1+dfsg-1 r-cran-rcppparallel/arm64/5.0.1+dfsg-1 r-cran-rcppparallel/armel/5.0.1+dfsg-1 r-cran-rcppparallel/armhf/5.0.1+dfsg-1 r-cran-rcppparallel/i386/5.0.1+dfsg-1 r-cran-rcppprogress/0.4.2-2 r-cran-rcpproll/amd64/0.3.0-1 r-cran-rcpproll/arm64/0.3.0-1 r-cran-rcpproll/armel/0.3.0-1 r-cran-rcpproll/armhf/0.3.0-1 r-cran-rcpproll/i386/0.3.0-1 r-cran-rcurl/amd64/1.98-1.2-1 r-cran-rcurl/arm64/1.98-1.2-1 r-cran-rcurl/armel/1.98-1.2-1 r-cran-rcurl/armhf/1.98-1.2-1 r-cran-rcurl/i386/1.98-1.2-1 r-cran-rdbnomics/0.6.1-2 r-cran-rdflib/0.2.3+dfsg-2 r-cran-rdpack/0.11-1-2 r-cran-readbrukerflexdata/1.8.5-3 r-cran-readmzxmldata/2.8.1-4 r-cran-readr/amd64/1.3.1-1 r-cran-readr/arm64/1.3.1-1 r-cran-readr/armel/1.3.1-1 r-cran-readr/armhf/1.3.1-1 r-cran-readr/i386/1.3.1-1 r-cran-readstata13/amd64/0.9.2-1 r-cran-readstata13/arm64/0.9.2-1 r-cran-readstata13/armel/0.9.2-1 r-cran-readstata13/armhf/0.9.2-1 r-cran-readstata13/i386/0.9.2-1 r-cran-readxl/amd64/1.3.1-2 r-cran-readxl/arm64/1.3.1-2 r-cran-readxl/armel/1.3.1-2 r-cran-readxl/armhf/1.3.1-2 r-cran-readxl/i386/1.3.1-2 r-cran-recipes/0.1.12+dfsg-2 r-cran-redland/amd64/1.0.17-11-1 r-cran-redland/arm64/1.0.17-11-1 r-cran-redland/armhf/1.0.17-11-1 r-cran-redland/i386/1.0.17-11-1 r-cran-registry/0.5-1-2 r-cran-regsem/amd64/1.5.2+dfsg-1 r-cran-regsem/arm64/1.5.2+dfsg-1 r-cran-regsem/armel/1.5.2+dfsg-1 r-cran-regsem/armhf/1.5.2+dfsg-1 r-cran-regsem/i386/1.5.2+dfsg-1 r-cran-relsurv/amd64/2.2-3-1 r-cran-relsurv/arm64/2.2-3-1 r-cran-relsurv/armel/2.2-3-1 r-cran-relsurv/armhf/2.2-3-1 r-cran-relsurv/i386/2.2-3-1 r-cran-rematch/1.0.1-3 r-cran-rematch2/2.1.2-2 r-cran-remotes/2.1.1-4 r-cran-rentrez/1.2.2+dfsg-2 r-cran-repr/1.1.0-2 r-cran-reprex/0.3.0-2 r-cran-reshape/0.8.8-2 r-cran-reshape2/1.4.4-2 r-cran-reticulate/amd64/1.15+dfsg-1 r-cran-reticulate/arm64/1.15+dfsg-1 r-cran-reticulate/armel/1.15+dfsg-1 r-cran-reticulate/armhf/1.15+dfsg-1 r-cran-reticulate/i386/1.15+dfsg-1 r-cran-rex/1.2.0-2 r-cran-rgdal/amd64/1.4-8-1 r-cran-rgdal/arm64/1.4-8-1 r-cran-rgdal/armel/1.4-8-1 r-cran-rgdal/armhf/1.4-8-1 r-cran-rgdal/i386/1.4-8-1 r-cran-rgenoud/amd64/5.8-3.0-1 r-cran-rgenoud/arm64/5.8-3.0-1 r-cran-rgenoud/armel/5.8-3.0-1 r-cran-rgenoud/armhf/5.8-3.0-1 r-cran-rgenoud/i386/5.8-3.0-1 r-cran-rglwidget/0.2.1-4 r-cran-rhandsontable/0.3.6+dfsg2-1 r-cran-rinside/amd64/0.2.16-1 r-cran-rinside/arm64/0.2.16-1 r-cran-rinside/armel/0.2.16-1 r-cran-rinside/armhf/0.2.16-1 r-cran-rinside/i386/0.2.16-1 r-cran-rio/0.5.16-2 r-cran-ritis/0.9.0+dfsg-2 r-cran-rjags/amd64/1:4-10-1 r-cran-rjags/arm64/1:4-10-1 r-cran-rjags/armel/1:4-10-1 r-cran-rjags/armhf/1:4-10-1 r-cran-rjags/i386/1:4-10-1 r-cran-rjson/amd64/0.2.20-1 r-cran-rjson/arm64/0.2.20-1 r-cran-rjson/armel/0.2.20-1 r-cran-rjson/armhf/0.2.20-1 r-cran-rjson/i386/0.2.20-1 r-cran-rlang/amd64/0.4.6-1 r-cran-rlang/arm64/0.4.6-1 r-cran-rlang/armel/0.4.6-1 r-cran-rlang/armhf/0.4.6-1 r-cran-rlang/i386/0.4.6-1 r-cran-rlist/0.4.6.1-4 r-cran-rlrsim/amd64/3.1-6-1 r-cran-rlrsim/arm64/3.1-6-1 r-cran-rlrsim/armel/3.1-6-1 r-cran-rlrsim/armhf/3.1-6-1 r-cran-rlrsim/i386/3.1-6-1 r-cran-rlumshiny/0.2.2-2 r-cran-rmarkdown/2.1+dfsg-4 r-cran-rms/amd64/5.1-4-1 r-cran-rms/arm64/5.1-4-1 r-cran-rms/armhf/5.1-4-1 r-cran-rms/i386/5.1-4-1 r-cran-rncl/amd64/0.8.4-1 r-cran-rncl/arm64/0.8.4-1 r-cran-rncl/armel/0.8.4-1 r-cran-rncl/armhf/0.8.4-1 r-cran-rncl/i386/0.8.4-1 r-cran-rneos/0.4-0-2 r-cran-rnetcdf/amd64/2.3-1-1 r-cran-rnetcdf/arm64/2.3-1-1 r-cran-rnetcdf/armel/2.3-1-1 r-cran-rnetcdf/armhf/2.3-1-1 r-cran-rnetcdf/i386/2.3-1-1 r-cran-rnexml/2.4.4+ds-2 r-cran-rngtools/1.5-2 r-cran-rniftilib/amd64/0.0-35.r79-5 r-cran-rniftilib/arm64/0.0-35.r79-5 r-cran-rniftilib/armel/0.0-35.r79-5 r-cran-rniftilib/armhf/0.0-35.r79-5 r-cran-rniftilib/i386/0.0-35.r79-5 r-cran-robumeta/2.0-3 r-cran-robust/amd64/0.5-0.0-1 r-cran-robust/arm64/0.5-0.0-1 r-cran-robust/armel/0.5-0.0-1 r-cran-robust/armhf/0.5-0.0-1 r-cran-robust/i386/0.5-0.0-1 r-cran-robustrankaggreg/1.1-3 r-cran-rockchalk/1.8.144+dfsg-3 r-cran-rocr/1.0-11-2 r-cran-rook/amd64/1.1-1+dfsg-2 r-cran-rook/arm64/1.1-1+dfsg-2 r-cran-rook/armel/1.1-1+dfsg-2 r-cran-rook/armhf/1.1-1+dfsg-2 r-cran-rook/i386/1.1-1+dfsg-2 r-cran-rotl/3.0.10-2 r-cran-roxygen2/7.1.0-2 r-cran-rpact/amd64/2.0.6-1 r-cran-rpact/arm64/2.0.6-1 r-cran-rpact/armel/2.0.6-1 r-cran-rpact/armhf/2.0.6-1 r-cran-rpact/i386/2.0.6-1 r-cran-rpf/amd64/1.0.4+dfsg-1 r-cran-rpf/arm64/1.0.4+dfsg-1 r-cran-rpf/armel/1.0.4+dfsg-1 r-cran-rpf/armhf/1.0.4+dfsg-1 r-cran-rpf/i386/1.0.4+dfsg-1 r-cran-rpostgresql/amd64/0.6-2+dfsg-2 r-cran-rpostgresql/arm64/0.6-2+dfsg-2 r-cran-rpostgresql/armel/0.6-2+dfsg-2 r-cran-rpostgresql/armhf/0.6-2+dfsg-2 r-cran-rpostgresql/i386/0.6-2+dfsg-2 r-cran-rprojroot/1.3-2-3 r-cran-rprotobuf/amd64/0.4.17-1 r-cran-rprotobuf/arm64/0.4.17-1 r-cran-rprotobuf/armel/0.4.17-1 r-cran-rprotobuf/armhf/0.4.17-1 r-cran-rprotobuf/i386/0.4.17-1 r-cran-rrcov/amd64/1.5-2-1 r-cran-rrcov/arm64/1.5-2-1 r-cran-rrcov/armel/1.5-2-1 r-cran-rrcov/armhf/1.5-2-1 r-cran-rrcov/i386/1.5-2-1 r-cran-rredlist/0.6.0-2 r-cran-rsample/0.0.6-2 r-cran-rsclient/amd64/0.7-3-2 r-cran-rsclient/arm64/0.7-3-2 r-cran-rsclient/armel/0.7-3-2 r-cran-rsclient/armhf/0.7-3-2 r-cran-rsclient/i386/0.7-3-2 r-cran-rsconnect/0.8.16-2 r-cran-rsdmx/1:0.5-14+dfsg-2 r-cran-rsgcc/amd64/1.0.6-2 r-cran-rsgcc/arm64/1.0.6-2 r-cran-rsgcc/armel/1.0.6-2 r-cran-rsgcc/armhf/1.0.6-2 r-cran-rsgcc/i386/1.0.6-2 r-cran-rslurm/0.5.0-2 r-cran-rsolnp/1.16+dfsg-4 r-cran-rspectra/amd64/0.16-0-1 r-cran-rspectra/arm64/0.16-0-1 r-cran-rspectra/armel/0.16-0-1 r-cran-rspectra/armhf/0.16-0-1 r-cran-rspectra/i386/0.16-0-1 r-cran-rsqlite/amd64/2.2.0-1 r-cran-rsqlite/arm64/2.2.0-1 r-cran-rsqlite/armel/2.2.0-1 r-cran-rsqlite/armhf/2.2.0-1 r-cran-rsqlite/i386/2.2.0-1 r-cran-rstan/amd64/2.19.3-1 r-cran-rstan/arm64/2.19.3-1 r-cran-rstan/armel/2.19.3-1 r-cran-rstan/armhf/2.19.3-1 r-cran-rstan/i386/2.19.3-1 r-cran-rstanarm/amd64/2.19.3-1 r-cran-rstanarm/arm64/2.19.3-1 r-cran-rstanarm/armhf/2.19.3-1 r-cran-rstanarm/i386/2.19.3-1 r-cran-rstantools/2.0.0-2 r-cran-rstudioapi/0.11-2 r-cran-rsvd/1.0.3-3 r-cran-rsvg/2.1-1 r-cran-rtsne/amd64/0.15-2 r-cran-rtsne/arm64/0.15-2 r-cran-rtsne/armel/0.15-2 r-cran-rtsne/armhf/0.15-2 r-cran-rtsne/i386/0.15-2 r-cran-runit/0.4.32-3 r-cran-rversions/2.0.1-2 r-cran-rvest/0.3.5-2 r-cran-rwave/amd64/2.4-8-2 r-cran-rwave/arm64/2.4-8-2 r-cran-rwave/armel/2.4-8-2 r-cran-rwave/armhf/2.4-8-2 r-cran-rwave/i386/2.4-8-2 r-cran-rwiener/amd64/1.3-3-1 r-cran-rwiener/arm64/1.3-3-1 r-cran-rwiener/armel/1.3-3-1 r-cran-rwiener/armhf/1.3-3-1 r-cran-rwiener/i386/1.3-3-1 r-cran-samr/amd64/3.0-1 r-cran-samr/arm64/3.0-1 r-cran-samr/armel/3.0-1 r-cran-samr/armhf/3.0-1 r-cran-samr/i386/3.0-1 r-cran-satellite/amd64/1.0.2-1 r-cran-satellite/arm64/1.0.2-1 r-cran-satellite/armel/1.0.2-1 r-cran-satellite/armhf/1.0.2-1 r-cran-satellite/i386/1.0.2-1 r-cran-scales/1.1.1-1 r-cran-scatterd3/0.9.1+dfsg-2 r-cran-scatterplot3d/0.3-41-3 r-cran-sctransform/amd64/0.2.1-1 r-cran-sctransform/arm64/0.2.1-1 r-cran-sctransform/armel/0.2.1-1 r-cran-sctransform/armhf/0.2.1-1 r-cran-sctransform/i386/0.2.1-1 r-cran-sdmtools/amd64/1.1-221.2-1 r-cran-sdmtools/arm64/1.1-221.2-1 r-cran-sdmtools/armel/1.1-221.2-1 r-cran-sdmtools/armhf/1.1-221.2-1 r-cran-sdmtools/i386/1.1-221.2-1 r-cran-segmented/1.1-0-2 r-cran-selectr/0.4-2-2 r-cran-sem/3.1.11-1 r-cran-semplot/1.1.2-3 r-cran-semtools/0.5.2-2 r-cran-sendmailr/1.2-1-5 r-cran-seqinr/amd64/3.6-1-1 r-cran-seqinr/arm64/3.6-1-1 r-cran-seqinr/armel/3.6-1-1 r-cran-seqinr/armhf/3.6-1-1 r-cran-seqinr/i386/3.6-1-1 r-cran-seriation/amd64/1.2-8-1 r-cran-seriation/arm64/1.2-8-1 r-cran-seriation/armel/1.2-8-1 r-cran-seriation/armhf/1.2-8-1 r-cran-seriation/i386/1.2-8-1 r-cran-seroincidence/2.0.0-2 r-cran-sessioninfo/1.1.1-4 r-cran-setrng/2013.9-1-3 r-cran-seurat/amd64/3.1.5-1 r-cran-seurat/arm64/3.1.5-1 r-cran-seurat/armel/3.1.5-1 r-cran-seurat/armhf/3.1.5-1 r-cran-seurat/i386/3.1.5-1 r-cran-sf/amd64/0.9-3+dfsg-1 r-cran-sf/arm64/0.9-3+dfsg-1 r-cran-sf/armel/0.9-3+dfsg-1 r-cran-sf/armhf/0.9-3+dfsg-1 r-cran-sf/i386/0.9-3+dfsg-1 r-cran-sfsmisc/1.1-7-2 r-cran-shape/1.4.4-3 r-cran-shazam/1.0.0-1 r-cran-shiny/1.4.0.2+dfsg-2 r-cran-shinybs/0.61-4 r-cran-shinycssloaders/0.3-2 r-cran-shinydashboard/0.7.1-2 r-cran-shinyfiles/0.8.0-2 r-cran-shinyjs/1.1-2 r-cran-shinystan/2.5.0-3 r-cran-shinythemes/1.1.2+dfsg-2 r-cran-sitmo/amd64/2.0.1-2 r-cran-sitmo/arm64/2.0.1-2 r-cran-sitmo/armel/2.0.1-2 r-cran-sitmo/armhf/2.0.1-2 r-cran-sitmo/i386/2.0.1-2 r-cran-sjlabelled/1.1.4-3 r-cran-sjmisc/2.8.4-3 r-cran-sjplot/2.8.3-3 r-cran-sjstats/0.18.0-2 r-cran-slam/amd64/0.1-47-2 r-cran-slam/arm64/0.1-47-2 r-cran-slam/armel/0.1-47-2 r-cran-slam/armhf/0.1-47-2 r-cran-slam/i386/0.1-47-2 r-cran-sn/1.6-1-3 r-cran-snakecase/0.11.0-2 r-cran-snowballc/amd64/0.7.0-1 r-cran-snowballc/arm64/0.7.0-1 r-cran-snowballc/armel/0.7.0-1 r-cran-snowballc/armhf/0.7.0-1 r-cran-snowballc/i386/0.7.0-1 r-cran-snowfall/1.84-6.1-3 r-cran-sodium/amd64/1.1-1 r-cran-sodium/arm64/1.1-1 r-cran-sodium/armel/1.1-1 r-cran-sodium/armhf/1.1-1 r-cran-sodium/i386/1.1-1 r-cran-solrium/1.1.4+dfsg-2 r-cran-sourcetools/amd64/0.1.7-2 r-cran-sourcetools/arm64/0.1.7-2 r-cran-sourcetools/armel/0.1.7-2 r-cran-sourcetools/armhf/0.1.7-2 r-cran-sourcetools/i386/0.1.7-2 r-cran-sp/1:1.4-2-2 r-cran-spacetime/1.2-3+dfsg-2 r-cran-spam/amd64/2.5-1-1 r-cran-spam/arm64/2.5-1-1 r-cran-spam/armel/2.5-1-1 r-cran-spam/armhf/2.5-1-1 r-cran-spam/i386/2.5-1-1 r-cran-sparsem/amd64/1.78-1 r-cran-sparsem/arm64/1.78-1 r-cran-sparsem/armel/1.78-1 r-cran-sparsem/armhf/1.78-1 r-cran-sparsem/i386/1.78-1 r-cran-spatial/amd64/7.3-12-1 r-cran-spatial/arm64/7.3-12-1 r-cran-spatial/armel/7.3-12-1 r-cran-spatial/armhf/7.3-12-1 r-cran-spatial/i386/7.3-12-1 r-cran-spatialreg/amd64/1.1-5+dfsg-1 r-cran-spatialreg/arm64/1.1-5+dfsg-1 r-cran-spatialreg/armel/1.1-5+dfsg-1 r-cran-spatialreg/armhf/1.1-5+dfsg-1 r-cran-spatialreg/i386/1.1-5+dfsg-1 r-cran-spatstat/1.64-1-1 r-cran-spatstat.data/1.4-3-2 r-cran-spatstat.utils/amd64/1.17-0-1 r-cran-spatstat.utils/arm64/1.17-0-1 r-cran-spatstat.utils/armel/1.17-0-1 r-cran-spatstat.utils/armhf/1.17-0-1 r-cran-spatstat.utils/i386/1.17-0-1 r-cran-spc/1:0.6.4-1 r-cran-spdata/0.3.5-2 r-cran-spdep/amd64/1.1-3+dfsg-1 r-cran-spdep/arm64/1.1-3+dfsg-1 r-cran-spdep/armel/1.1-3+dfsg-1 r-cran-spdep/armhf/1.1-3+dfsg-1 r-cran-spdep/i386/1.1-3+dfsg-1 r-cran-splines2/0.2.8-3 r-cran-spp/amd64/1.16.0-1 r-cran-spp/arm64/1.16.0-1 r-cran-spp/armel/1.16.0-1 r-cran-spp/armhf/1.16.0-1 r-cran-spp/i386/1.16.0-1 r-cran-squarem/2020.2-2 r-cran-stabledist/0.7-1-3 r-cran-stanheaders/amd64/2.21.0-1-1 r-cran-stanheaders/arm64/2.21.0-1-1 r-cran-stanheaders/armel/2.21.0-1-1 r-cran-stanheaders/armhf/2.21.0-1-1 r-cran-stanheaders/i386/2.21.0-1-1 r-cran-stars/0.4-1-3 r-cran-statmod/amd64/1.4.34-1 r-cran-statmod/arm64/1.4.34-1 r-cran-statmod/armel/1.4.34-1 r-cran-statmod/armhf/1.4.34-1 r-cran-statmod/i386/1.4.34-1 r-cran-stringdist/amd64/0.9.5.5-1 r-cran-stringdist/arm64/0.9.5.5-1 r-cran-stringdist/armel/0.9.5.5-1 r-cran-stringdist/armhf/0.9.5.5-1 r-cran-stringdist/i386/0.9.5.5-1 r-cran-stringi/amd64/1.4.6-1 r-cran-stringi/arm64/1.4.6-1 r-cran-stringi/armel/1.4.6-1 r-cran-stringi/armhf/1.4.6-1 r-cran-stringi/i386/1.4.6-1 r-cran-stringr/1.4.0-2 r-cran-surveillance/amd64/1.18.0-1 r-cran-surveillance/arm64/1.18.0-1 r-cran-surveillance/armel/1.18.0-1 r-cran-surveillance/armhf/1.18.0-1 r-cran-surveillance/i386/1.18.0-1 r-cran-survey/4.0-2 r-cran-survminer/0.4.6+dfsg-3 r-cran-survmisc/0.5.5-3 r-cran-svglite/1.2.3-3 r-cran-sys/amd64/3.3-1 r-cran-sys/arm64/3.3-1 r-cran-sys/armel/3.3-1 r-cran-sys/armhf/3.3-1 r-cran-sys/i386/3.3-1 r-cran-systemfit/1.1-24-2 r-cran-systemfonts/0.2.2-1 r-cran-taxize/0.9.96+dfsg-1 r-cran-tcltk2/1.2-11-3 r-cran-tcr/amd64/2.2.4.1-1 r-cran-tcr/arm64/2.2.4.1-1 r-cran-tcr/armel/2.2.4.1-1 r-cran-tcr/armhf/2.2.4.1-1 r-cran-tcr/i386/2.2.4.1-1 r-cran-teachingdemos/2.12-2 r-cran-tensor/1.5-4 r-cran-testextra/0.1.0.1-3 r-cran-testit/0.11-2 r-cran-testthat/2.3.2-2 r-cran-tfisher/0.2.0-3 r-cran-tfmpvalue/amd64/0.0.8-1 r-cran-tfmpvalue/arm64/0.0.8-1 r-cran-tfmpvalue/armel/0.0.8-1 r-cran-tfmpvalue/armhf/0.0.8-1 r-cran-tfmpvalue/i386/0.0.8-1 r-cran-tgp/amd64/2.4-14-4 r-cran-tgp/arm64/2.4-14-4 r-cran-tgp/armel/2.4-14-4 r-cran-tgp/armhf/2.4-14-4 r-cran-tgp/i386/2.4-14-4 r-cran-th.data/1.0-10-2 r-cran-threejs/0.3.3+dfsg-2 r-cran-tibble/amd64/3.0.1-1 r-cran-tibble/arm64/3.0.1-1 r-cran-tibble/armel/3.0.1-1 r-cran-tibble/armhf/3.0.1-1 r-cran-tibble/i386/3.0.1-1 r-cran-tidygraph/1.2.0-1 r-cran-tidyr/amd64/1.0.3-1 r-cran-tidyr/arm64/1.0.3-1 r-cran-tidyr/armel/1.0.3-1 r-cran-tidyr/armhf/1.0.3-1 r-cran-tidyr/i386/1.0.3-1 r-cran-tidyselect/1.1.0+dfsg-1 r-cran-tidyverse/1.3.0-2 r-cran-tiff/amd64/0.1-5-1 r-cran-tiff/arm64/0.1-5-1 r-cran-tiff/armel/0.1-5-1 r-cran-tiff/armhf/0.1-5-1 r-cran-tiff/i386/0.1-5-1 r-cran-tigger/1.0.0-1 r-cran-tikzdevice/amd64/0.12.3-1 r-cran-tikzdevice/arm64/0.12.3-1 r-cran-tikzdevice/armel/0.12.3-1 r-cran-tikzdevice/armhf/0.12.3-1 r-cran-tikzdevice/i386/0.12.3-1 r-cran-timedate/amd64/3043.102-1 r-cran-timedate/arm64/3043.102-1 r-cran-timedate/armel/3043.102-1 r-cran-timedate/armhf/3043.102-1 r-cran-timedate/i386/3043.102-1 r-cran-timereg/amd64/1.9.4-1 r-cran-timereg/arm64/1.9.4-1 r-cran-timereg/armel/1.9.4-1 r-cran-timereg/armhf/1.9.4-1 r-cran-timereg/i386/1.9.4-1 r-cran-timeseries/3062.100-2 r-cran-tinytest/1.2.1-1 r-cran-tinytex/0.23-1 r-cran-tm/amd64/0.7-7-2 r-cran-tm/arm64/0.7-7-2 r-cran-tm/armel/0.7-7-2 r-cran-tm/armhf/0.7-7-2 r-cran-tm/i386/0.7-7-2 r-cran-tmb/amd64/1.7.16-1 r-cran-tmb/arm64/1.7.16-1 r-cran-tmb/armel/1.7.16-1 r-cran-tmb/armhf/1.7.16-1 r-cran-tmb/i386/1.7.16-1 r-cran-tmvtnorm/amd64/1.4-10-3 r-cran-tmvtnorm/arm64/1.4-10-3 r-cran-tmvtnorm/armel/1.4-10-3 r-cran-tmvtnorm/armhf/1.4-10-3 r-cran-tmvtnorm/i386/1.4-10-3 r-cran-transformr/amd64/0.1.1-2 r-cran-transformr/arm64/0.1.1-2 r-cran-transformr/armel/0.1.1-2 r-cran-transformr/armhf/0.1.1-2 r-cran-transformr/i386/0.1.1-2 r-cran-treescape/1.10.18+dfsg-2 r-cran-treespace/amd64/1.1.3.2+dfsg-1 r-cran-treespace/arm64/1.1.3.2+dfsg-1 r-cran-treespace/armhf/1.1.3.2+dfsg-1 r-cran-treespace/i386/1.1.3.2+dfsg-1 r-cran-triebeard/amd64/0.3.0-3 r-cran-triebeard/arm64/0.3.0-3 r-cran-triebeard/armel/0.3.0-3 r-cran-triebeard/armhf/0.3.0-3 r-cran-triebeard/i386/0.3.0-3 r-cran-trimcluster/0.1-5-2 r-cran-truncdist/1.0-2-4 r-cran-truncnorm/amd64/1.0-8-2 r-cran-truncnorm/arm64/1.0-8-2 r-cran-truncnorm/armel/1.0-8-2 r-cran-truncnorm/armhf/1.0-8-2 r-cran-truncnorm/i386/1.0-8-2 r-cran-tsne/0.1-3-3 r-cran-tsp/amd64/1.1-10-1 r-cran-tsp/arm64/1.1-10-1 r-cran-tsp/armel/1.1-10-1 r-cran-tsp/armhf/1.1-10-1 r-cran-tsp/i386/1.1-10-1 r-cran-ttr/amd64/0.23-6-2 r-cran-ttr/arm64/0.23-6-2 r-cran-ttr/armel/0.23-6-2 r-cran-ttr/armhf/0.23-6-2 r-cran-ttr/i386/0.23-6-2 r-cran-tufte/0.6-2 r-cran-tweenr/amd64/1.0.1-2 r-cran-tweenr/arm64/1.0.1-2 r-cran-tweenr/armel/1.0.1-2 r-cran-tweenr/armhf/1.0.1-2 r-cran-tweenr/i386/1.0.1-2 r-cran-ucminf/amd64/1.1-4-2 r-cran-ucminf/arm64/1.1-4-2 r-cran-ucminf/armel/1.1-4-2 r-cran-ucminf/armhf/1.1-4-2 r-cran-ucminf/i386/1.1-4-2 r-cran-udunits2/amd64/0.13-1 r-cran-udunits2/arm64/0.13-1 r-cran-udunits2/armel/0.13-1 r-cran-udunits2/armhf/0.13-1 r-cran-udunits2/i386/0.13-1 r-cran-unitizer/1.4.10-1 r-cran-units/amd64/0.6-6-1 r-cran-units/arm64/0.6-6-1 r-cran-units/armel/0.6-6-1 r-cran-units/armhf/0.6-6-1 r-cran-units/i386/0.6-6-1 r-cran-urltools/amd64/1.7.3+dfsg-1 r-cran-urltools/arm64/1.7.3+dfsg-1 r-cran-urltools/armel/1.7.3+dfsg-1 r-cran-urltools/armhf/1.7.3+dfsg-1 r-cran-urltools/i386/1.7.3+dfsg-1 r-cran-uroot/2.1-0-2 r-cran-usethis/1.6.1-2 r-cran-utf8/amd64/1.1.4-1 r-cran-utf8/arm64/1.1.4-1 r-cran-utf8/armel/1.1.4-1 r-cran-utf8/armhf/1.1.4-1 r-cran-utf8/i386/1.1.4-1 r-cran-uuid/amd64/0.1.4-1 r-cran-uuid/arm64/0.1.4-1 r-cran-uuid/armel/0.1.4-1 r-cran-uuid/armhf/0.1.4-1 r-cran-uuid/i386/0.1.4-1 r-cran-uwot/amd64/0.1.8-1 r-cran-uwot/arm64/0.1.8-1 r-cran-uwot/armel/0.1.8-1 r-cran-uwot/armhf/0.1.8-1 r-cran-uwot/i386/0.1.8-1 r-cran-v8/amd64/3.0.2+dfsg-1 r-cran-v8/arm64/3.0.2+dfsg-1 r-cran-v8/armhf/3.0.2+dfsg-1 r-cran-v8/i386/3.0.2+dfsg-1 r-cran-vcd/1:1.4-7-2 r-cran-vcdextra/0.7-1-4 r-cran-vcr/0.5.4+dfsg-2 r-cran-vctrs/0.3.0-2 r-cran-vdiffr/amd64/0.3.1+dfsg-3 r-cran-vdiffr/arm64/0.3.1+dfsg-3 r-cran-vdiffr/armhf/0.3.1+dfsg-3 r-cran-vdiffr/i386/0.3.1+dfsg-3 r-cran-vegan/amd64/2.5-6+dfsg-1 r-cran-vegan/arm64/2.5-6+dfsg-1 r-cran-vegan/armel/2.5-6+dfsg-1 r-cran-vegan/armhf/2.5-6+dfsg-1 r-cran-vegan/i386/2.5-6+dfsg-1 r-cran-venndiagram/1.6.20-3 r-cran-vgam/amd64/1.1-3-1 r-cran-vgam/arm64/1.1-3-1 r-cran-vgam/armel/1.1-3-1 r-cran-vgam/armhf/1.1-3-1 r-cran-vgam/i386/1.1-3-1 r-cran-vioplot/0.3.4-2 r-cran-vipor/0.4.5-3 r-cran-viridis/0.5.1-3 r-cran-viridislite/0.3.0-4 r-cran-waveslim/amd64/1.8.2-1 r-cran-waveslim/arm64/1.8.2-1 r-cran-waveslim/armel/1.8.2-1 r-cran-waveslim/armhf/1.8.2-1 r-cran-waveslim/i386/1.8.2-1 r-cran-wavethresh/amd64/4.6.8-2 r-cran-wavethresh/arm64/4.6.8-2 r-cran-wavethresh/armel/4.6.8-2 r-cran-wavethresh/armhf/4.6.8-2 r-cran-wavethresh/i386/4.6.8-2 r-cran-wdi/2.6.0-2 r-cran-webgestaltr/amd64/0.4.3-1 r-cran-webgestaltr/arm64/0.4.3-1 r-cran-webgestaltr/armel/0.4.3-1 r-cran-webgestaltr/armhf/0.4.3-1 r-cran-webgestaltr/i386/0.4.3-1 r-cran-webmockr/0.6.2-2 r-cran-webshot/0.5.2-2 r-cran-webutils/amd64/1.1-1 r-cran-webutils/arm64/1.1-1 r-cran-webutils/armel/1.1-1 r-cran-webutils/armhf/1.1-1 r-cran-webutils/i386/1.1-1 r-cran-wgcna/amd64/1.69-1 r-cran-wgcna/arm64/1.69-1 r-cran-wgcna/armhf/1.69-1 r-cran-wgcna/i386/1.69-1 r-cran-whatif/1.5-9-3 r-cran-whisker/0.4-2 r-cran-wikidatar/1.4.0+dfsg-2 r-cran-wikipedir/1.5.0-3 r-cran-wikitaxa/0.3.0+dfsg-2 r-cran-withr/2.2.0-2 r-cran-wordcloud/amd64/2.6-1 r-cran-wordcloud/arm64/2.6-1 r-cran-wordcloud/armel/2.6-1 r-cran-wordcloud/armhf/2.6-1 r-cran-wordcloud/i386/2.6-1 r-cran-worrms/0.4.0+dfsg-2 r-cran-xfun/0.13-2 r-cran-xml/amd64/3.99-0.3-2 r-cran-xml/arm64/3.99-0.3-2 r-cran-xml/armel/3.99-0.3-2 r-cran-xml/armhf/3.99-0.3-2 r-cran-xml/i386/3.99-0.3-2 r-cran-xml2/amd64/1.3.2-1 r-cran-xml2/arm64/1.3.2-1 r-cran-xml2/armel/1.3.2-1 r-cran-xml2/armhf/1.3.2-1 r-cran-xml2/i386/1.3.2-1 r-cran-xopen/1.0.0-2 r-cran-xslt/1.4.2-1 r-cran-xtable/1:1.8-4-2 r-cran-xts/amd64/0.12-0-1 r-cran-xts/arm64/0.12-0-1 r-cran-xts/armel/0.12-0-1 r-cran-xts/armhf/0.12-0-1 r-cran-xts/i386/0.12-0-1 r-cran-yaml/amd64/2.2.1-1 r-cran-yaml/arm64/2.2.1-1 r-cran-yaml/armel/2.2.1-1 r-cran-yaml/armhf/2.2.1-1 r-cran-yaml/i386/2.2.1-1 r-cran-zeallot/0.1.0-3 r-cran-zelig/5.1.6.1-2 r-cran-zeligchoice/0.9-6-3 r-cran-zeligei/0.1-2-3 r-cran-zeligverse/0.1.1-3 r-cran-zip/amd64/2.0.4-1 r-cran-zip/arm64/2.0.4-1 r-cran-zip/armel/2.0.4-1 r-cran-zip/armhf/2.0.4-1 r-cran-zip/i386/2.0.4-1 r-omegahat-xmlrpc/0.3-0-3 r-other-amsmercury/amd64/1.3.0-3 r-other-amsmercury/arm64/1.3.0-3 r-other-amsmercury/armel/1.3.0-3 r-other-amsmercury/armhf/1.3.0-3 r-other-amsmercury/i386/1.3.0-3 r-other-chbutils/amd64/0.1+git20171026.a226cee-1 r-other-chbutils/arm64/0.1+git20171026.a226cee-1 r-other-chbutils/armel/0.1+git20171026.a226cee-1 r-other-chbutils/armhf/0.1+git20171026.a226cee-1 r-other-chbutils/i386/0.1+git20171026.a226cee-1 r-other-curvefdp/2.0-6 r-other-iwrlars/amd64/0.9-5-4 r-other-iwrlars/arm64/0.9-5-4 r-other-iwrlars/armel/0.9-5-4 r-other-iwrlars/armhf/0.9-5-4 r-other-iwrlars/i386/0.9-5-4 r-other-mott-happy/amd64/2.4-3 r-other-mott-happy/arm64/2.4-3 r-other-mott-happy/armel/2.4-3 r-other-mott-happy/armhf/2.4-3 r-other-mott-happy/i386/2.4-3 r-other-nitpick/2.0-7 r-other-wasabi/1.0.1-2 r-other-x4r/amd64/1.0.1+git20150806.c6bd9bd-2 r-other-x4r/arm64/1.0.1+git20150806.c6bd9bd-2 r-other-x4r/armel/1.0.1+git20150806.c6bd9bd-2 r-other-x4r/armhf/1.0.1+git20150806.c6bd9bd-2 r-other-x4r/i386/1.0.1+git20150806.c6bd9bd-2 r-zoo/amd64/1.8-8-1 r-zoo/arm64/1.8-8-1 r-zoo/armel/1.8-8-1 r-zoo/armhf/1.8-8-1 r-zoo/i386/1.8-8-1 rcmdr/2.6-2-2 rcpp/amd64/1.0.4.6-1 rcpp/arm64/1.0.4.6-1 rcpp/armel/1.0.4.6-1 rcpp/armhf/1.0.4.6-1 rcpp/i386/1.0.4.6-1 relimp/1.0-5-4 rggobi/amd64/2.1.22-1 rggobi/arm64/2.1.22-1 rggobi/armel/2.1.22-1 rggobi/armhf/2.1.22-1 rggobi/i386/2.1.22-1 rgl/0.100.54-1 rglpk/amd64/0.6-4-1 rglpk/arm64/0.6-4-1 rglpk/armel/0.6-4-1 rglpk/armhf/0.6-4-1 rglpk/i386/0.6-4-1 rgtk2/amd64/2.20.36-2 rgtk2/arm64/2.20.36-2 rgtk2/armel/2.20.36-2 rgtk2/armhf/2.20.36-2 rgtk2/i386/2.20.36-2 rjava/amd64/0.9-12-1 rjava/arm64/0.9-12-1 rjava/armel/0.9-12-1 rjava/armhf/0.9-12-1 rjava/i386/0.9-12-1 rkward/0.7.1b-1 rmatrix/amd64/1.2-18-1 rmatrix/arm64/1.2-18-1 rmatrix/armel/1.2-18-1 rmatrix/armhf/1.2-18-1 rmatrix/i386/1.2-18-1 rmpi/amd64/0.6-9-1 rmpi/arm64/0.6-9-1 rmpi/armel/0.6-9-1 rmpi/armhf/0.6-9-1 rmpi/i386/0.6-9-1 rmysql/amd64/0.10.20-1 rmysql/arm64/0.10.20-1 rmysql/armel/0.10.20-1 rmysql/armhf/0.10.20-1 rmysql/i386/0.10.20-1 robustbase/amd64/0.93-6-1 robustbase/arm64/0.93-6-1 robustbase/armel/0.93-6-1 robustbase/armhf/0.93-6-1 robustbase/i386/0.93-6-1 rodbc/1.3-17-1 rpart/amd64/4.1-15-2 rpart/arm64/4.1-15-2 rpart/armel/4.1-15-2 rpart/armhf/4.1-15-2 rpart/i386/4.1-15-2 rquantlib/amd64/0.4.12-1 rquantlib/arm64/0.4.12-1 rquantlib/armel/0.4.12-1 rquantlib/armhf/0.4.12-1 rquantlib/i386/0.4.12-1 rserve/amd64/1.7-3.1-2 rserve/arm64/1.7-3.1-2 rserve/armel/1.7-3.1-2 rserve/armhf/1.7-3.1-2 rserve/i386/1.7-3.1-2 rsprng/amd64/1.0-5 rsprng/arm64/1.0-5 rsprng/armel/1.0-5 rsprng/armhf/1.0-5 rsprng/i386/1.0-5 rsymphony/amd64/0.1-28-1 rsymphony/arm64/0.1-28-1 rsymphony/armel/0.1-28-1 rsymphony/armhf/0.1-28-1 rsymphony/i386/0.1-28-1 sandwich/2.5-1-3 sm/amd64/2.2-5.6-1 sm/arm64/2.2-5.6-1 sm/armel/2.2-5.6-1 sm/armhf/2.2-5.6-1 sm/i386/2.2-5.6-1 snow/1:0.4.3-2 strucchange/amd64/1.5-2-1+1 strucchange/arm64/1.5-2-1+1 strucchange/armel/1.5-2-1+1 strucchange/armhf/1.5-2-1+1 strucchange/i386/1.5-2-1+1 survival/amd64/3.1-12-1 survival/arm64/3.1-12-1 survival/armel/3.1-12-1 survival/armhf/3.1-12-1 survival/i386/3.1-12-1 tkrplot/amd64/0.0.24-1 tkrplot/arm64/0.0.24-1 tkrplot/armel/0.0.24-1 tkrplot/armhf/0.0.24-1 tkrplot/i386/0.0.24-1 tseries/amd64/0.10-47-2 tseries/arm64/0.10-47-2 tseries/armel/0.10-47-2 tseries/armhf/0.10-47-2 tseries/i386/0.10-47-2 urca/amd64/1.3-0-3 urca/arm64/1.3-0-3 urca/armel/1.3-0-3 urca/armhf/1.3-0-3 urca/i386/1.3-0-3
+# 2020-05-29
+force linux/5.6.14-1kali1
+force glibc/2.30-8
+# 2020-05-15
+force-skiptest node-jquery/3.5.1+dfsg-3
+force glibc/2.30-7
+force-skiptest ruby2.7/2.7.1-3
+# 2020-05-14
+force linux/5.6.7-1kali1
+easy schroedinger-coordgenlibs/1.3-3 rdkit/201909.1-3
+# 2020-05-05
+allow-uninst dynare dynare-matlab octave-mapping octave-ncarray octave-netcdf octave-openems
+# 2020-04-27
+force ruby-glu/8.2.2-0kali3
+force ruby-defaults/1:2.7+1
+remove ruby-hdfeos5/1.2-9
+# 2020-04-24
+force linux/5.5.17-1kali1
+hint libbpf/0.0.6-1 linux/5.5.17-1kali1
+# 2020-04-17
+force virtualbox
+force virtualbox-ext-pack
+force gnome-shell/3.36.1-5
+force gnome-shell-extensions/3.36.1-1kali1
+force mutter/3.36.1-4
+force gnome-shell-extension-dashtodock/67+git20200225-1
+remove gnome-shell-xrdesktop/3.34.4-1
+# 2020-04-16
+force linux/5.5.13-2kali1
+# 2020-04-10
+force python-odf/1.4.1-1 python-wsproto/0.15.0-3
+force sphinx/1.8.5-8
+force-hint python3-defaults/3.8.2-2
+easy dcontainers/amd64/0.8.0~alpha.16-1 dcontainers/arm64/0.8.0~alpha.16-1 dcontainers/i386/0.8.0~alpha.16-1 mir-core/amd64/1.0.1-2 mir-core/arm64/1.0.1-2 mir-core/i386/1.0.1-2 stdx-allocator/amd64/3.1.0~beta.2-3 stdx-allocator/arm64/3.1.0~beta.2-3 stdx-allocator/i386/3.1.0~beta.2-3
+force alembic/1.1.0-1 ragout/2.3-2 r-bioc-goseq/1.38.0-2 r-bioc-metagenomeseq/1.28.2-1 r-bioc-rgsepd/1.18.0-2 r-bioc-wrench/1.4.0+dfsg-2
+force python-pip/20.0.2-4 python-git/3.1.0-1 pyqt5/5.14.2+dfsg-1 pcapy/0.11.4-2 openldap/2.4.49+dfsg-3 mako/1.1.2+ds1-1 gcc-9/9.3.0-10 gdk-pixbuf/2.40.0+dfsg-4 jtreg/5.0-b01-1
+force libfile-sort-perl/1.01-2 mpich/3.4~a2+really3.3.2-1 python-ldapdomaindump/0.9.1-2 python-typing-extensions/3.7.4.2-1 python2.7/2.7.18~rc1-2 endless/1.1-4 python-ldap3/2.5.1-0kali2 r-bioc-edaseq/2.20.0+dfsg-2 r-cran-gwidgets/0.0-54.1-3 rspamd/2.5-1 ruby-ffi-compiler/1.0.1-3 ruby-mini-histogram/0.1.3-2 libxcrypt/1:4.4.16-1 requests/2.23.0+dfsg-2  xorg-server/2:1.20.8-2 libcap2/1:2.33-1 openjdk-11/11.0.7+9-1 nodejs/10.19.0~dfsg-3 libffi/3.3-4 eyes.js/0.1.8-2 bubblewrap/0.4.1-1 apache2/2.4.43-1 pytest/4.6.9-2 pandas/0.25.3+dfsg-9 openssl/1.1.1f-1 mypy/0.770-1 libnet-server-perl/2.009-2 hwloc/2.2.0+dfsg-3 golang-github-audriusbutkevicius-pfilter/0.0.5-1 apbs/1.5+dfsg1-3 9base/1:6-9
+force python-virtualenv/20.0.16-1
+force dnspython/1.16.0-2
+force endlessh/1.1-4 xdemorse/3.6.2-1
+
+# 2020-03-17
+force-hint adabrowse/4.0.3-12 adacontrol/1.21r6b-3 asis/2019-2 dh-ada-library/6.19 gprbuild/2019-3 libaws/20.0-2 libgnatcoll/19-4 liblog4ada/1.3.1.b6dafb49-2 libtemplates-parser/20-3 libxmlada/19-2 libxmlezout/1.06.2-2
+force-hint ruby-cms-scanner/0.8.6-0kali1 ruby-public-suffix/4.0.3+ds-0kali1 wpscan/3.7.11-0kali1
+unblock glibc/2.30-2
+force glibc/2.30-2
+unblock ruby-defaults/1:2.5.7.1
+force ruby-defaults/1:2.5.7.1
+force-badtest protobuf/3.11.4-3
+force gcc-9/9.3.0-3
+force python-pip/20.0.2-2
+force python-msgpack/0.6.2-1
+
 # 2019-11-21
 force-hint elogind/241.3-1+debian2
 unblock ruby-defaults/1:2.5.2
