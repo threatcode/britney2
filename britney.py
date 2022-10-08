@@ -1459,33 +1459,13 @@ class Britney(object):
             for dep in deps:
                 excuses_rdeps[dep].add(name)
 
-        def find_related(e, hint, circular_first=False):
-            excuse = excuses[e]
-            if not circular_first:
-                hint.add(excuse.item)
-            if not excuse.get_deps():
-                return hint
-            for p in excuses_deps[e]:
-                if p in hint or p not in valid_excuses:
-                    continue
-                if not find_related(p, hint):
-                    return False
-            return hint
-
         # loop on them
         candidates = []
         mincands = []
         seen_hints = set()
         for e in valid_excuses:
             excuse = excuses[e]
-            if excuse.get_deps():
-                hint = find_related(e, set(), True)
-                if isinstance(hint, dict) and e in hint:
-                    h = frozenset(hint)
-                    if h not in seen_hints:
-                        candidates.append(h)
-                        seen_hints.add(h)
-            else:
+            if not excuse.get_deps():
                 items = [excuse.item]
                 orig_size = 1
                 looped = False
@@ -1514,7 +1494,6 @@ class Britney(object):
         return [candidates, mincands]
 
     def run_auto_hinter(self):
-        mi_factory = self._migration_item_factory
         for lst in self.get_auto_hinter_hints(self.upgrade_me):
             for hint in lst:
                 self.do_hint("easy", "autohinter", sorted(hint))
