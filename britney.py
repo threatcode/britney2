@@ -210,6 +210,7 @@ from britney2.policies.policy import (AgePolicy,
                                       BuiltUsingPolicy,
                                       BuiltOnBuilddPolicy,
                                       ImplicitDependencyPolicy,
+                                      PolicyLoadRequest,
                                       )
 from britney2.policies.autopkgtest import AutopkgtestPolicy
 from britney2.utils import (log_and_format_old_libraries,
@@ -223,6 +224,20 @@ from britney2.utils import (log_and_format_old_libraries,
 
 __author__ = 'Fabio Tranchitella and the Debian Release Team'
 __version__ = '2.0'
+
+
+MIGRATION_POLICIES = [
+    PolicyLoadRequest.always_load(DependsPolicy),
+    PolicyLoadRequest.conditionally_load(RCBugPolicy, 'rcbug_enable', True),
+    PolicyLoadRequest.conditionally_load(PiupartsPolicy, 'piuparts_enable', True),
+    PolicyLoadRequest.conditionally_load(AutopkgtestPolicy, 'adt_enable', True),
+    PolicyLoadRequest.conditionally_load(AgePolicy, 'age_enable', True),
+    PolicyLoadRequest.always_load(BuildDependsPolicy),
+    PolicyLoadRequest.always_load(BlockPolicy),
+    PolicyLoadRequest.conditionally_load(BuiltUsingPolicy, 'built_using_policy_enable', True),
+    PolicyLoadRequest.always_load(ImplicitDependencyPolicy),
+    PolicyLoadRequest.conditionally_load(BuiltOnBuilddPolicy, 'check_buildd', False),
+]
 
 
 class Britney(object):
@@ -503,22 +518,7 @@ class Britney(object):
         else:
             self.options.adt_ignore_failure_for_new_tests = True
 
-        self._policy_engine.add_policy(DependsPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'rcbug_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'piuparts_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'adt_enable') == 'yes':
-            self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'age_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(ImplicitDependencyPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'check_buildd', 'no') == 'yes':
-            self._policy_engine.add_policy(BuiltOnBuilddPolicy(self.options, self.suite_info))
+        self._policy_engine.load_policies(self.options, self.suite_info, MIGRATION_POLICIES)
 
     @property
     def hints(self):

@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import time
+from typing import List, Optional, Callable, Any
+
 import yaml
 from enum import IntEnum, unique
 from collections import defaultdict
@@ -11,7 +13,7 @@ from urllib.parse import quote
 
 import apt_pkg
 
-from britney2 import SuiteClass, PackageId
+from britney2 import SuiteClass, PackageId, Suites
 from britney2.hints import Hint, split_into_one_hint_per_package
 from britney2.inputs.suiteloader import SuiteContentLoader
 from britney2.policies import PolicyVerdict, ApplySrcPolicy
@@ -20,12 +22,52 @@ from britney2 import DependencyType
 from britney2.excusedeps import DependencySpec
 
 
+class PolicyLoadRequest:
+    __slots__ = ('_options_name', '_default_value', '_policy_constructor')
+
+    def __init__(self,
+                 policy_constructor: Callable[[Any, Suites], 'BasePolicy'],
+                 options_name: Optional[str],
+                 default_value: bool):
+        self._policy_constructor = policy_constructor
+        self._options_name = options_name
+        self._default_value = default_value
+
+    def is_enabled(self, options) -> bool:
+        if self._options_name is None:
+            assert self._default_value
+            return True
+        actual_value = getattr(options, self._options_name, None)
+        if actual_value is None:
+            return self._default_value
+        return actual_value.lower() in ('yes', 'y', 'true', 't')
+
+    def load(self, options: Any, suite_info: Suites) -> 'BasePolicy':
+        return self._policy_constructor(options, suite_info)
+
+    @classmethod
+    def always_load(cls, policy_constructor: Callable[[Any, Suites], 'BasePolicy']) -> 'PolicyLoadRequest':
+        return cls(policy_constructor, None, True)
+
+    @classmethod
+    def conditionally_load(cls,
+                           policy_constructor: Callable[[Any, Suites], 'BasePolicy'],
+                           option_name: str,
+                           default_value: bool) -> 'PolicyLoadRequest':
+        return cls(policy_constructor, option_name, default_value)
+
+
 class PolicyEngine(object):
     def __init__(self):
         self._policies = []
 
     def add_policy(self, policy):
         self._policies.append(policy)
+
+    def load_policies(self, options, suite_info: Suites, policy_load_requests: List[PolicyLoadRequest]) -> None:
+        for policy_load_request in policy_load_requests:
+            if policy_load_request.is_enabled(options):
+                self.add_policy(policy_load_request.load(options, suite_info))
 
     def register_policy_hints(self, hint_parser):
         for policy in self._policies:
@@ -166,7 +208,7 @@ class BasePolicy(object):
         Britney will call this method on binaries from a given source package
         on a given architecture, when Britney is considering to migrate them
         from the given source suite to the target suite.  The policy will then
-        evaluate the the migration and then return a verdict.
+        evaluate the migration and then return a verdict.
 
         :param policy_info A dictionary of all policy results.  The
         policy can add a value stored in a key related to its name.
@@ -294,7 +336,7 @@ class AgePolicy(BasePolicy):
             try:
                 as_days = int(v)
             except ValueError:
-                raise ValueError("Unable to parse " + k + " was a number of days. Must be 0 or a positive integer")
+                raise ValueError("Unable to parse " + k + " as a number of days. Must be 0 or a positive integer")
             if as_days < 0:
                 raise ValueError("The value of " + k + " must be zero or a positive integer")
             mindays[k.split("_")[1]] = as_days
