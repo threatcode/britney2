@@ -156,7 +156,7 @@ def build_sources_from_universe_and_inst_tester(policy, pkg_universe, inst_teste
         if inst_tester.is_pkg_in_the_suite(pkg_id):
             if pkg_name in suite_info.target_suite.sources:
                 # sanity check, this shouldn't happen
-                raise(KeyError)
+                raise KeyError(pkg_name)
             suite_info.target_suite.sources[pkg_name] = src_universe[pkg_id]
             binaries_t.setdefault(ARCH, {}).setdefault(pkg_name, bin_universe[pkg_id])
         # We need to find the highest version of a package to add it to the
