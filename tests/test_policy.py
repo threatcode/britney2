@@ -18,7 +18,7 @@ POLICY_DATA_BASE_DIR = os.path.join(os.path.dirname(__file__), 'policy-test-data
 ARCH = 'amd64'
 
 
-def initialize_policy(test_name, policy_class, *args, **kwargs):
+def initialize_policy(test_name, policy_class, **kwargs):
     test_dir = os.path.join(POLICY_DATA_BASE_DIR, test_name)
     debci_data = os.path.join(test_dir, 'debci.json')
     target = 'testing'
@@ -55,7 +55,7 @@ def initialize_policy(test_name, policy_class, *args, **kwargs):
         [Suite(SuiteClass.PRIMARY_SOURCE_SUITE, 'unstable', os.path.join(test_dir, 'unstable'), '')],
     )
     mi_factory = MigrationItemFactory(suite_info)
-    policy = policy_class(options, suite_info, *args)
+    policy = policy_class(options, suite_info)
     fake_britney = MockObject(log=lambda x, y='I': None)
     hint_parser = HintParser(mi_factory)
     if pkg_universe and inst_tester:
@@ -315,6 +315,7 @@ class TestAgePolicy(unittest.TestCase):
         'medium': 5,
         'low': 10,
     }
+    DEFAULT_MIN_DAYS_AS_OPTIONS = {'mindays_' + k: str(v) for k, v in DEFAULT_MIN_DAYS.items()}
 
     @classmethod
     def reset_age(cls, policy, effective_date=10):
@@ -326,7 +327,7 @@ class TestAgePolicy(unittest.TestCase):
 
         try:
             src_name = 'unlisted-source-package'
-            policy = initialize_policy('age/missing-age-file', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS)
+            policy = initialize_policy('age/missing-age-file', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS)
             age_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
             assert os.path.exists(age_file)
             assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]
@@ -337,14 +338,14 @@ class TestAgePolicy(unittest.TestCase):
 
     def test_age_new(self):
         src_name = 'unlisted-source-package'
-        policy = initialize_policy('age/basic', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS)
+        policy = initialize_policy('age/basic', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS)
         age_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
         assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]
         assert age_policy_info['current-age'] == 0
 
     def test_age_urgented(self):
         src_name = 'unlisted-source-package'
-        policy = initialize_policy('age/basic', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS,
+        policy = initialize_policy('age/basic', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS,
                                    hints=['urgent unlisted-source-package/2.0'])
         age_policy_info = apply_src_policy(policy, PolicyVerdict.PASS_HINTED, src_name)
         assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]
@@ -354,7 +355,7 @@ class TestAgePolicy(unittest.TestCase):
 
     def test_age_old_version_aged(self):
         src_name = 'out-of-date-version'
-        policy = initialize_policy('age/basic', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS)
+        policy = initialize_policy('age/basic', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS)
         self.reset_age(policy)
         age_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
         assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]
@@ -362,7 +363,7 @@ class TestAgePolicy(unittest.TestCase):
 
     def test_age_almost_aged(self):
         src_name = 'almost-aged-properly'
-        policy = initialize_policy('age/basic', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS)
+        policy = initialize_policy('age/basic', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS)
         self.reset_age(policy)
         age_policy_info = apply_src_policy(policy, PolicyVerdict.REJECTED_TEMPORARILY, src_name)
         assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]
@@ -370,7 +371,7 @@ class TestAgePolicy(unittest.TestCase):
 
     def test_age_aged_properly(self):
         src_name = 'aged-properly'
-        policy = initialize_policy('age/basic', AgePolicy, TestAgePolicy.DEFAULT_MIN_DAYS)
+        policy = initialize_policy('age/basic', AgePolicy, **TestAgePolicy.DEFAULT_MIN_DAYS_AS_OPTIONS)
         self.reset_age(policy)
         age_policy_info = apply_src_policy(policy, PolicyVerdict.PASS, src_name)
         assert age_policy_info['age-requirement'] == TestAgePolicy.DEFAULT_MIN_DAYS[DEFAULT_URGENCY]

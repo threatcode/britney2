@@ -265,9 +265,9 @@ class AgePolicy(BasePolicy):
 
     """
 
-    def __init__(self, options, suite_info, mindays):
+    def __init__(self, options, suite_info):
         super().__init__('age', options, suite_info, {SuiteClass.PRIMARY_SOURCE_SUITE})
-        self._min_days = mindays
+        self._min_days = self._generate_mindays_table()
         self._min_days_default = None  # initialised later
         # britney's "day" begins at 7pm (we want aging to occur in the 22:00Z run and we run Britney 2-4 times a day)
         # NB: _date_now is used in tests
@@ -284,6 +284,21 @@ class AgePolicy(BasePolicy):
         if hasattr(self.options, 'no_penalties'):
             self._penalty_immune_urgencies = frozenset(x.strip() for x in self.options.no_penalties.split())
         self._bounty_min_age = None  # initialised later
+
+    def _generate_mindays_table(self):
+        mindays = {}
+        for k in dir(self.options):
+            if not k.startswith('mindays_'):
+                continue
+            v = getattr(self.options, k)
+            try:
+                as_days = int(v)
+            except ValueError:
+                raise ValueError("Unable to parse " + k + " was a number of days. Must be 0 or a positive integer")
+            if as_days < 0:
+                raise ValueError("The value of " + k + " must be zero or a positive integer")
+            mindays[k.split("_")[1]] = as_days
+        return mindays
 
     def register_hints(self, hint_parser):
         hint_parser.register_hint_type('age-days', simple_policy_hint_parser_function(AgeDayHint, int), min_args=2)

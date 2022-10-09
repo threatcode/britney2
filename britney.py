@@ -441,10 +441,6 @@ class Britney(object):
             self.logger.error("Unable to read the configuration file (%s), exiting!", self.options.config)
             sys.exit(1)
 
-        # minimum days for unstable-testing transition and the list of hints
-        # are handled as an ad-hoc case
-        MINDAYS = {}
-
         self.HINTS = {'command-line': self.HINTS_ALL}
         with open(self.options.config, encoding='utf-8') as config:
             for line in config:
@@ -452,9 +448,7 @@ class Britney(object):
                     k, v = line.split('=', 1)
                     k = k.strip()
                     v = v.strip()
-                    if k.startswith("MINDAYS_"):
-                        MINDAYS[k.split("_")[1].lower()] = int(v)
-                    elif k.startswith("HINTS_"):
+                    if k.startswith("HINTS_"):
                         self.HINTS[k.split("_")[1].lower()] = \
                             reduce(lambda x, y: x+y, [
                                 hasattr(self, "HINTS_" + i) and
@@ -517,7 +511,7 @@ class Britney(object):
         if getattr(self.options, 'adt_enable') == 'yes':
             self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
         if getattr(self.options, 'age_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
+            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
         self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
         if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
