@@ -48,18 +48,20 @@ Documentation is handled by sphinx and can be built via::
 Known users of britney2
 -----------------------
 
-The following is a table of known public consumers and which features
+The following is a list of known public consumers and which features
 they rely on.  It is maintained on a "best-effort"-basis and heavily
 rely on consumers to notify us on changes (e.g. by filing a merge
 request on https://salsa.debian.org/release-team/britney2).
 
-
-  +---------------------------------+------------------------------------------------------------------------+-------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-  | Consumer                        | code repo                                                              | config file                                                                               | britney cmd-line                                                                                                       |
-  +=================================+========================================================================+=======================================================================+============================================================================================================================================+
-  | Kali Linux                      | https://gitlab.com/kalilinux/tools/britney2                            |  https://gitlab.com/kalilinux/tools/britney2/-/blob/master/kali.conf                      | `./britney.py -c X -d Y -v <https://gitlab.com/kalilinux/tools/britney2/-/blob/master/kali-run-britney.sh>`_           |
-  +---------------------------------+------------------------------------------------------------------------+-------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-  | Security Team (for autopkgtest) | https://salsa.debian.org/security-team/britney2                        | https://salsa.debian.org/security-team/britney2/-/blob/master/britney2-debsec-stable.conf | `./britney.py -v -c X --no-compute-migrations <https://salsa.debian.org/security-team/britney2/-/blob/master/run.sh>`_ |
-  +---------------------------------+------------------------------------------------------------------------+-------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-  | Ubuntu                          | https://git.launchpad.net/~ubuntu-release/britney/+git/britney2-ubuntu | https://git.launchpad.net/~ubuntu-release/britney/+git/britney2-ubuntu/tree/britney.conf  | ./britney.py ??                                                                                                        |
-  +---------------------------------+------------------------------------------------------------------------+-------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+* Kali Linux
+  * [repo] https://gitlab.com/kalilinux/tools/britney2
+  * [conf] https://gitlab.com/kalilinux/tools/britney2/-/blob/master/kali.conf
+  * [cmd]  `./britney.py -c X -d Y -v <https://gitlab.com/kalilinux/tools/britney2/-/blob/master/kali-run-britney.sh>`_
+* Security Team (for autopkgtest)
+  * [repo] https://salsa.debian.org/security-team/britney2
+  * [conf] https://salsa.debian.org/security-team/britney2/-/blob/master/britney2-debsec-stable.conf
+  * [cmd]  `./britney.py -v -c X --no-compute-migrations <https://salsa.debian.org/security-team/britney2/-/blob/master/run.sh>`_
+* Ubuntu
+  * [repo] https://git.launchpad.net/~ubuntu-release/britney/+git/britney2-ubuntu
+  * [conf] https://git.launchpad.net/~ubuntu-release/britney/+git/britney2-ubuntu/tree/britney.conf
+  * [cmd]  ./britney.py ??
