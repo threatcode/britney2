@@ -25,7 +25,7 @@ Usage: ./run-standalone.sh [-n] [-b <debci_backlog_days>] [-s <secret_header_fil
   -r                       : comma-separated list of release hints to download and use, see https://release.debian.org/britney/hints (default: empty)
   -h                       : this help text
 
-Example: ./run.sh -d 15 -r 'elbrus,adsb' britney2-debsec-stable.conf
+Example: ./run-standalone.sh -d 15 -r 'elbrus,adsb' britney2-debsec-stable.conf
 ```
 
 This takes care of implementing the following routine:
@@ -44,13 +44,13 @@ file as its first argument.
 ## Configuration ##
 
 The configuration file for the stable release is
-[britney2-debsec-stable.conf](https://salsa.debian.org/security-team/britney2/-/blob/master/britney2-debsec-stable.conf). It
+[etc/autopkgtest_stable-security.conf](https://salsa.debian.org/security-team/britney2/-/blob/master/etc/autopkgtest_stable-security.conf). It
 describes where the control files can be found (on `seger.debian.org`),
 what architectures are supported, etc.
 
 There is another configuration file for the oldstable release, used when
 the *DebSec Team* supports it:
-[britney2-debsec-oldstable.conf](https://salsa.debian.org/security-team/britney2/-/blob/master/britney2-debsec-oldstable.conf).
+[etc/autopkgtest_oldstable-security.conf](https://salsa.debian.org/security-team/britney2/-/blob/master/etc/autopkgtest_oldstable-security.conf).
 
 # Deployment #
 
@@ -99,7 +99,7 @@ the corresponding cron entries for stable on `seger.debian.org`:
 # Regression testing (via debci) for stable
 # The resulting excuses file can be viewed with:
 #    elinks /srv/security-team.debian.org/autopkgtest/britney2/data-stable/output/excuses_buildd-stable-security.html 
-30 * * * * /srv/security-team.debian.org/autopkgtest/britney2/run.sh -p 9 -z -r elbrus britney2-debsec-stable.conf >> /srv/security-team.debian.org/autopkgtest/britney2/logs/debsec-stable.conf 2>&1
+30 * * * * /srv/security-team.debian.org/autopkgtest/britney2/run-standalone.sh -p 9 -z -r elbrus /srv/security-team.debian.org/autopkgtest/britney2/etc/autopkgtest_stable-security.conf >> /srv/security-team.debian.org/autopkgtest/britney2/logs/autopkgtest_stable-security.log 2>&1
 ```
 
 For oldstable it's:
@@ -108,7 +108,7 @@ For oldstable it's:
 # Regression testing (via debci) for oldstable
 # The resulting excuses file can be viewed with:
 #    elinks /srv/security-team.debian.org/autopkgtest/britney2/data-oldstable/output/excuses_buildd-oldstable-security.html
-40 * * * * /srv/security-team.debian.org/autopkgtest/britney2/run.sh -p 9 -z -r elbrus britney2-debsec-oldstable.conf >> /srv/security-team.debian.org/autopkgtest/britney2/logs/debsec-oldstable.conf 2>&1
+40 * * * * /srv/security-team.debian.org/autopkgtest/britney2/run-standalone.sh -p 9 -z -r elbrus /srv/security-team.debian.org/autopkgtest/britney2/etc/autopkgtest_oldstable-security.conf >> /srv/security-team.debian.org/autopkgtest/britney2/logs/autopkgtest_oldstable-security.log 2>&1
 ```
 
 Results are published with:
@@ -123,9 +123,9 @@ Results are published with:
 
 ## Logs ##
 
-`run.sh` logs for stable: `/srv/security-team.debian.org/autopkgtest/britney2/logs/debsec-stable.log` 
+`run-standalone.sh` logs for stable-security: `/srv/security-team.debian.org/autopkgtest/britney2/logs/autopkgtest_stable-security.log` 
 
-`run.sh` logs for oldstable: `/srv/security-team.debian.org/autopkgtest/britney2/logs/debsec-oldstable.log`
+`run-standalone.sh` logs for oldstable-security: `/srv/security-team.debian.org/autopkgtest/britney2/logs/autopkgtest_oldstable-security.log`
 
 Publishing logs: `/srv/security-team.debian.org/autopkgtest/britney2/logs/publish.log`
 
