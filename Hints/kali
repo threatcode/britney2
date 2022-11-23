@@ -9,13 +9,14 @@
 # This one should be unblocked after we have rebuilt all packages against
 # the new ruby version (when applicable)
 block ruby-defaults
+
 # This one is to manage the rebuild of debian-installer and netboot/mini.iso
 # images when there is a new libc*-udeb (when major updates)
 block glibc
 
-# this one is to manage properly the Gnome transition. The migration in Debian
+# This one is to manage properly the Gnome transition. The migration in Debian
 # Testing is not correctly managed and it regularly breaks kali-rolling. Keep
-# this forever. Unlock when Daniel is OK
+# this forever. Unlock when Daniel is OK.
 block gnome-shell
 block gnome-control-center
 
@@ -57,13 +58,37 @@ block fudgec2
 # Allow some source packages to retain old binaries in kali-rolling
 # allow-smooth-update sortedcontainers/2.1.0-1
 
-# 2022-10-04 - sagemath blocks a bunch of packages
-force-badtest sagemath/9.5-4
+
 
 # ----------- #
 finished
 # ----------- #
 
+# 2022-11-22
+force-skiptest libnma/1.10.4-1+kali1
+# 2022-11-18
+unblock gnome-shell
+unblock gnome-control-center
+# 2022-11-17
+unblock glibc/2.36-4
+force-skiptest glibc/2.36-4
+force-skiptest gcc-12/12.2.0-9
+# 2022-11-14
+force-skiptest linux/6.0.7-1kali1
+# 2022-11-04
+unblock ruby-defaults/1:3.0+3.1
+force-skiptest ruby-defaults/1:3.0+3.1
+# 2022-11-03 - help openssl/3.0.7-1
+force-badtest cargo/0.57.0-7
+force-badtest dpdk/21.11-5
+# 2022-11-03 - help perl/5.36.0-4
+force-badtest lintian/2.115.3
+# 2022-11-02
+unblock glibc/2.35-4
+force-skiptest glibc/2.35-4
+# 2022-10-13
+unblock glibc/2.35-3
+force-skiptest linux/5.19.11-1kali2
 # 2022-10-04
 force-badtest hosthunter/1.6-0kali1
 # 2022-10-04 - help gcc-12
@@ -71,6 +96,8 @@ force-badtest hosthunter/1.6-0kali1
 # * sagemath/9.5-4: never seems to pass in Kali anyway, although it does pass in Debian.
 # * squid/5.6-1: fails consistently in Debian and in Kali.
 force-skiptest gcc-12/12.2.0-3
+# 2022-10-04 - sagemath blocks a bunch of packages
+force-badtest sagemath/9.5-4
 # 2022-10-04 - circular dep between libnginx-mod-http-lua and lua-resty-core
 # causes britney to crash with RecursionError, cf. #1010660
 easy libnginx-mod-http-lua/1:0.10.22-2 lua-resty-core/0.1.24-2 nginx/1.22.0-3

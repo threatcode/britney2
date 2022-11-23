@@ -1,7 +1,8 @@
-# Synchronized with https://release.debian.org/britney/hints/elbrus on 2022-10-05
+# Synchronized with https://release.debian.org/britney/hints/elbrus on 2022-11-23
 # using the script kali-sync-badtests.sh.
 force-badtest apache2/2.4.38-3+deb10u7
 force-badtest apache2/2.4.38-3+deb10u8
+force-badtest assimp/5.0.1~ds0-2/arm64
 force-badtest awesome/all
 force-badtest ayatana-indicator-session/all
 force-badtest baloo-kf5/5.54.0-1
@@ -30,11 +31,12 @@ force-badtest dxvk/all/ppc64el
 force-badtest dxvk/all/s390x
 force-badtest ganeti/2.15.2-7+deb9u3
 force-badtest ganeti/2.16.0-5
+force-badtest glib2.0/all/armel
+force-badtest glib2.0/all/armhf
 force-badtest glibc/all/armel
 force-badtest gnupg2/2.2.12-1
 force-badtest gnuplot-iostream/0~20140302.gitc8919a0+dfsg-3
 force-badtest golang-github-bmatsuo-lmdb-go/1.8.0+git20170215.a14b5a3-2/s390x
-force-badtest golang-github-bmatsuo-lmdb-go/all/s390x
 force-badtest grr/all
 force-badtest gscan2pdf/2.11.0-1
 force-badtest gyoto/1.3.1-1
@@ -52,11 +54,6 @@ force-badtest kwayland/4:5.28.0-1
 force-badtest kwayland/4:5.54.0-1
 force-badtest libaperture-0/0.1.0+git20200908-3
 force-badtest libdbd-mysql-perl/4.050-2
-force-badtest libflame/all/amd64
-force-badtest libflame/all/arm64
-force-badtest libflame/all/armel
-force-badtest libflame/all/i386
-force-badtest libflame/all/s390x
 force-badtest libio-pty-perl/1:1.15-2/armhf
 force-badtest libksysguard/4:5.14.3-1
 force-badtest libksysguard/4:5.14.5-1
@@ -85,8 +82,9 @@ force-badtest llvm-toolchain-13/all/armhf
 force-badtest llvm-toolchain-13/all/ppc64el
 force-badtest llvm-toolchain-14/all/armel
 force-badtest llvm-toolchain-9/all/ppc64el
-force-badtest meson/all/armhf
+force-badtest meson/0.56.2-1/armhf
 force-badtest netplan.io/0.95-2
+force-badtest nut/all
 force-badtest nvidia-cuda-toolkit/11.2.2-3+deb11u1/ppc64el
 force-badtest nvidia-graphics-drivers-legacy-390xx/390.151-1~deb10u1
 force-badtest octave-sparsersb/1.0.8-3/armhf
@@ -152,6 +150,7 @@ force-badtest trinityrnaseq/all
 force-badtest unattended-upgrades/1.11.2
 force-badtest unattended-upgrades/2.8
 force-badtest v4l2loopback/0.12.1-1
+force-badtest vip-manager/1.0.1-4
 force-badtest x11vnc/all
 force-badtest xmds2/all/amd64
 force-badtest xpra/2.4.3+dfsg1-1/armel
