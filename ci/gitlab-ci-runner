@@ -7,7 +7,7 @@ err=0
 PYTEST_COV_OPTIONS=
 BRITNEY=./britney.py
 
-git clone https://salsa.debian.org/debian/britney2-tests.git britney2-tests
+git clone --depth=1 https://salsa.debian.org/debian/britney2-tests.git britney2-tests
 
 if [ "x$1" = "x--with-coverage" ]; then
     PYTEST_COV_OPTIONS="--cov-branch --cov --cov-report="
