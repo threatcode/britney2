@@ -578,6 +578,18 @@ class AutopkgtestPolicy(BasePolicy):
         # Here we figure out what is required from the source suite
         # for the test to install successfully.
         #
+        # The ImplicitDependencyPolicy does a similar calculation, but
+        # if I (elbrus) understand correctly, only in the reverse
+        # dependency direction. We are doing something similar here
+        # but in the dependency direction (note: this code is older).
+        # We use the ImplicitDependencyPolicy result for the reverse
+        # dependencies and we keep the code below for the
+        # dependencies. Using the ImplicitDependencyPolicy results
+        # also in the reverse direction seems to require quite some
+        # reorganisation to get that information available here, as in
+        # the current state only the current excuse is available here
+        # and the required other excuses may not be calculated yet.
+        #
         # Loop over all binary packages from trigger and
         # recursively look up which *versioned* dependencies are
         # only satisfied in the source suite.
@@ -641,6 +653,12 @@ class AutopkgtestPolicy(BasePolicy):
             # change it to the version in the source suite
             bin_broken.update(broken_filtered)
         bin_triggers.update(bin_broken)
+
+        # The ImplicitDependencyPolicy also found packages that need
+        # to migrate together, so add them to the triggers too.
+        for bin_implicit in excuse.depends_packages_flattened:
+            if bin_implicit.architecture == arch:
+                bin_triggers.add(bin_implicit)
 
         triggers = set()
         for binary in bin_triggers:

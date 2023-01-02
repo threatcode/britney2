@@ -230,12 +230,12 @@ MIGRATION_POLICIES = [
     PolicyLoadRequest.always_load(DependsPolicy),
     PolicyLoadRequest.conditionally_load(RCBugPolicy, 'rcbug_enable', True),
     PolicyLoadRequest.conditionally_load(PiupartsPolicy, 'piuparts_enable', True),
+    PolicyLoadRequest.always_load(ImplicitDependencyPolicy),
     PolicyLoadRequest.conditionally_load(AutopkgtestPolicy, 'adt_enable', True),
     PolicyLoadRequest.conditionally_load(AgePolicy, 'age_enable', True),
     PolicyLoadRequest.always_load(BuildDependsPolicy),
     PolicyLoadRequest.always_load(BlockPolicy),
     PolicyLoadRequest.conditionally_load(BuiltUsingPolicy, 'built_using_policy_enable', True),
-    PolicyLoadRequest.always_load(ImplicitDependencyPolicy),
     PolicyLoadRequest.conditionally_load(BuiltOnBuilddPolicy, 'check_buildd', False),
 ]
 
