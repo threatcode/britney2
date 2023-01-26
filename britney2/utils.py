@@ -680,8 +680,9 @@ def invalidate_excuses(excuses, valid, invalid, invalidated):
         for pkg_dep in exc.depends_packages:
             # set of excuses, each of which can satisfy this specific
             # dependency
-            # if there is a dependency on a package that doesn't exist, the
-            # set will contain an ImpossibleDependencyState
+            # if there is a dependency on a package for which no
+            # excuses exist (e.g. a cruft binary), the set will
+            # contain an ImpossibleDependencyState
             dep_exc = set()
             for pkg_id in pkg_dep.deps:
                 pkg_excuses = excuses_packages[pkg_id]
@@ -701,7 +702,9 @@ def invalidate_excuses(excuses, valid, invalid, invalidated):
                 invalid.add(exc.name)
 
     # loop on the invalid excuses
-    for ename in iter_except(invalid.pop, KeyError):
+    # Convert invalid to a list for deterministic results
+    invalid = sorted(invalid)
+    for ename in iter_except(invalid.pop, IndexError):
         invalidated.add(ename)
         # if there is no reverse dependency, skip the item
         if ename not in excuses_rdeps:
@@ -712,7 +715,7 @@ def invalidate_excuses(excuses, valid, invalid, invalidated):
             rdep_verdict = PolicyVerdict.REJECTED_BLOCKED_BY_ANOTHER_ITEM
 
         # loop on the reverse dependencies
-        for x in excuses_rdeps[ename]:
+        for x in sorted(excuses_rdeps[ename]):
             exc = excuses[x]
             # if the item is valid and it is not marked as `forced', then we
             # invalidate this specfic dependency
@@ -724,7 +727,7 @@ def invalidate_excuses(excuses, valid, invalid, invalidated):
                 # invalidate the excuse
                 if not still_valid:
                     valid.discard(x)
-                    invalid.add(x)
+                    invalid.append(x)
 
 
 def compile_nuninst(target_suite, architectures, nobreakall_arches):

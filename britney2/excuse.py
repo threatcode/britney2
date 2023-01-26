@@ -248,6 +248,13 @@ class Excuse(object):
         assert dep != frozenset(), "%s: Adding empty list of dependencies" % self.name
 
         deps = []
+        try:
+            # Casting to a sorted list makes excuses more
+            # deterministic, but fails if the list has more than one
+            # element *and* at least one DependencyState
+            dep = sorted(dep)
+        except TypeError:
+            pass
         for d in dep:
             if isinstance(d, DependencyState):
                 deps.append(d)
@@ -377,12 +384,12 @@ class Excuse(object):
 
         dep_issues = defaultdict(set)
         for d in self.all_deps:
-            dep = d.first_dep
             info = ""
             if not d.possible:
                 desc = d.first_impossible_dep
                 info = "Impossible %s: %s -> %s" % (d.deptype, self.uvname, desc)
             else:
+                dep = d.first_dep
                 duv = excuses[dep].uvname
                 # Make sure we link to package names
                 duv_src = duv.split("/")[0]
