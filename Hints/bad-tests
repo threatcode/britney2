@@ -1,4 +1,4 @@
-# Synchronized with https://release.debian.org/britney/hints/elbrus on 2023-03-08
+# Synchronized with https://release.debian.org/britney/hints/elbrus on 2023-05-17
 # using the script kali-sync-badtests.sh.
 force-badtest apache2/2.4.38-3+deb10u7
 force-badtest apache2/2.4.38-3+deb10u8
@@ -34,18 +34,21 @@ force-badtest dxvk/all/ppc64el
 force-badtest dxvk/all/s390x
 force-badtest ganeti/2.15.2-7+deb9u3
 force-badtest ganeti/2.16.0-5
+force-badtest ganeti/3.0.2-3
 force-badtest glib2.0/all/armel
 force-badtest glib2.0/all/armhf
 force-badtest glibc/all/armel
 force-badtest gnupg2/2.2.12-1
 force-badtest gnuplot-iostream/0~20140302.gitc8919a0+dfsg-3
 force-badtest golang-github-bmatsuo-lmdb-go/1.8.0+git20170215.a14b5a3-2/s390x
+force-badtest golang-github-hashicorp-yamux/all
 force-badtest grr/all
 force-badtest gscan2pdf/2.11.0-1
 force-badtest gyoto/1.3.1-1
 force-badtest hg-git/0.8.12-1
 force-badtest hypre/2.15.1-5
 force-badtest hypre/2.18.2-1/armhf
+force-badtest jenkins-job-builder/3.11.0-5/amd64
 force-badtest jsurf-alggeo/all
 force-badtest kate4/all
 force-badtest kdebugsettings/18.04.1-1/ppc64el
@@ -53,6 +56,9 @@ force-badtest kodi/2:17.6+dfsg1-4/ppc64el
 force-badtest konclude/all/s390x
 force-badtest kopanocore/8.7.0-3
 force-badtest kore/4.1.0-3
+force-badtest kronosnet/1.20-4/amd64
+force-badtest kronosnet/1.20-4/arm64
+force-badtest kronosnet/1.20-4/i386
 force-badtest kwayland/4:5.28.0-1
 force-badtest kwayland/4:5.54.0-1
 force-badtest libaperture-0/0.1.0+git20200908-3
@@ -138,13 +144,9 @@ force-badtest strongswan/5.7.2-1
 force-badtest strongswan/5.7.2-1+deb10u2
 force-badtest suricata/1:4.1.2-2
 force-badtest suricata/1:4.1.2-2+deb10u1
+force-badtest suricata/1:6.0.1-3/amd64
 force-badtest syslog-ng/3.8.1-10
 force-badtest systemd/241-7~deb10u5
-force-badtest thunderbird/1:60.8.0-1~deb9u1/ppc64el
-force-badtest thunderbird/1:60.9.0-1~deb10u1/ppc64el
-force-badtest thunderbird/1:60.9.0-1~deb10u2/ppc64el
-force-badtest thunderbird/1:68.2.2-1~deb9u1/ppc64el
-force-badtest thunderbird/1:68.2.2-1~deb9u1/ppc64el
 force-badtest thunderbird/all/ppc64el
 force-badtest tracker/2.3.6-2
 force-badtest trinityrnaseq/all

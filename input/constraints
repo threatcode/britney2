@@ -32,6 +32,10 @@ Package-List:
  python3-smbus
  i2c-tools
  python3-pigpio
+ # used in kali-purple
+ arkime
+ cyberchef
+ thehive
 
 Constraint: present-and-installable
 Comment: List of Kali meta-packages for extra-safety
