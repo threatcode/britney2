@@ -745,6 +745,9 @@ class AutopkgtestPolicy(BasePolicy):
                     except KeyError:
                         pass
 
+        if not self.has_built_on_this_arch_or_is_arch_all(srcinfo, arch):
+            return []
+
         pkg_universe = self.britney.pkg_universe
         # plus all direct reverse dependencies and test triggers of its
         # binaries which have an autopkgtest
@@ -1251,3 +1254,27 @@ class AutopkgtestPolicy(BasePolicy):
                     return True
 
         return False
+
+    def has_built_on_this_arch_or_is_arch_all(self, src_data, arch):
+        '''When a source builds arch:all binaries, those binaries are
+           added to all architectures and thus the source 'exists'
+           everywhere. This function checks if the source has any arch
+           specific binaries on this architecture and if not, if it
+           has them on any architecture.
+        '''
+        packages_s_a = self.suite_info.primary_source_suite.binaries[arch]
+        has_unknown_binary = False
+        for binary_s in src_data.binaries:
+            try:
+                binary_u = packages_s_a[binary_s.package_name]
+            except KeyError:
+                # src_data.binaries has all the built binaries, so if
+                # we get here, we know that at least one architecture
+                # has architecture specific binaries
+                has_unknown_binary = True
+                continue
+            if binary_u.architecture == arch:
+                return True
+        # If we get here, we have only seen arch:all packages for this
+        # arch.
+        return not has_unknown_binary
