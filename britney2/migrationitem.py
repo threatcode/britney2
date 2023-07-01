@@ -59,6 +59,9 @@ class MigrationItem(object):
             name = "-%s" % (name)
         return name
 
+    def __repr__(self):
+        return ("MI(%s)" % (self.__str__()))
+
     def __str__(self):
         if self.version is not None:
             return self.name
