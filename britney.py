@@ -865,7 +865,7 @@ class Britney(object):
         for y in sorted((y for y in packages), key=attrgetter('uvname')):
             try:
                 _, updates, rms, _ = mm.compute_groups(y)
-                result = (y, frozenset(updates), frozenset(rms))
+                result = (y, sorted(updates), sorted(rms))
                 group_info[y] = result
             except MigrationConstraintException as e:
                 rescheduled_packages.remove(y)
@@ -881,7 +881,7 @@ class Britney(object):
 
         output_logger.info("recur: [] %s %d/0", ",".join(x.uvname for x in selected), len(packages))
         while rescheduled_packages:
-            groups = {group_info[x] for x in rescheduled_packages}
+            groups = [group_info[x] for x in rescheduled_packages]
             worklist = solver.solve_groups(groups)
             rescheduled_packages = []
 
@@ -922,7 +922,7 @@ class Britney(object):
                             for cruft_item in new_cruft:
                                 try:
                                     _, updates, rms, _ = mm.compute_groups(cruft_item)
-                                    result = (cruft_item, frozenset(updates), frozenset(rms))
+                                    result = (cruft_item, sorted(updates), sorted(rms))
                                     group_info[cruft_item] = result
                                     worklist.append([cruft_item])
                                 except MigrationConstraintException as e:
