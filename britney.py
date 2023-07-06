@@ -853,6 +853,10 @@ class Britney(object):
         counters for every action performed. If the action does not improve them, it is reverted.
         The method returns the new uninstallability counters and the remaining actions if the
         final result is successful, otherwise (None, []).
+
+        :param packages: list of MigrationItem
+        :param selected: list of MigrationItem?
+        :param nuninst: dict with sets ? of ? per architecture
         """
         group_info = {}
         rescheduled_packages = packages

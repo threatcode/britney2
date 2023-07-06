@@ -36,7 +36,7 @@ def compute_scc(graph):
     Iterative variant of Tarjan's algorithm for finding strongly-connected
     components.
 
-    :param graph: Table of all nodes along which their edges (in "before" and "after")
+    :param graph: dict of all nodes along which their edges (in "before" and "after")
     :return: List of components (each component is a list of items)
     """
     result = []
@@ -78,6 +78,7 @@ def compute_scc(graph):
             return True
         return False
 
+    # graph is a dict, shouldn't need sorting
     for n in graph:
         if n in low:
             continue
@@ -310,6 +311,12 @@ class InstallabilitySolver(object):
         return scc
 
     def solve_groups(self, groups):
+        '''
+        :param groups: iterable of tuples. The first element is a
+        MigrationItem, the second element is a set of BinaryPackageId
+        reflecting requested updates and the third element is a set of
+        BinaryPackageId reflecting requested removals.
+        '''
         result = []
         emitted = set()
         queue = deque()

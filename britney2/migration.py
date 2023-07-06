@@ -379,6 +379,9 @@ class MigrationManager(object):
         return (affected_all, smooth_updates)
 
     def _apply_multiple_items_to_target_suite(self, items):
+        """
+        :param items: list of MigrationItems
+        """
         is_source_migration = False
         if len(items) == 1:
             item = items[0]
