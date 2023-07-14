@@ -67,6 +67,33 @@ block fudgec2
 finished
 # ----------- #
 
+# 2023-07-11
+age-days 0 xtrx-dkms/0.0.1+git20190320.5ae3a3e-3.2+kali1
+# 2023-07-10
+age-days 0 linux/6.3.7-1kali1
+force-skiptest linux/6.3.7-1kali1
+# 2023-06-30
+age-days 0 firmware-nonfree/20230515-2+kali1
+# 2023-06-13
+age-days 0 sasquatch/4.5.1-0kali1 unblob/23.5.9-0kali2
+# 2023-06-05
+age-days 0 pipewire-module-xrdp/0.0~git20230529.e14b74f-0kali1
+# 2023-06-02
+age-days 0 kali-menu/2023.3.1
+# 2023-05-25
+age-days 0 kali-meta/2023.2.12
+# 2023-05-23
+age-days 0 kali-meta/2023.2.11
+age-days 0 firefox-developer-edition-kbx/0~2023.05.1
+force-skiptest node-source-map/0.7.0++dfsg2+really.0.6.1-15
+# 2023-05-22
+age-days 0 mutter/44.1-1 gnome-shell/44.1-1
+unblock gnome-shell/44.1-1
+# 2023-05-17
+age-days 0 dissect.cstruct/3.6-0kali1 burpsuite/2023.4.3-0kali1 exploitdb/20230514-0kali1 feroxbuster/2.10.0-0kali1 kali-defaults/2023.2.2
+age-days 0 base-files/1:2023.2.0 firmware-nonfree/20230210-5+kali1 firefox-developer-edition-kbx/0~2023.05.0 kali-meta/2023.2.10 kali-themes/2023.2.4 samba/2:4.17.8+dfsg-1 seclists/2023.2-0kali1
+force-skiptest samba/2:4.17.8+dfsg-1
+force-skiptest delve/1.20.2-1 libpfm4/4.13.0-1 ncurses/6.4-4 php8.2/8.2.5-2 utf8-locale/1.0.0-2 webkit2gtk/2.40.1-1 xorg-server/2:21.1.7-3
 # 2023-05-15
 force-skiptest linux/6.1.27-1kali1
 age-days 0 linux/6.1.27-1kali1
