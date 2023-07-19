@@ -912,7 +912,7 @@ class Britney(object):
                             if new_cruft:
                                 output_logger.info(
                                     "   added new cruft items to list: %s",
-                                    " ".join(x.uvname for x in new_cruft))
+                                    " ".join(x.uvname for x in sorted(new_cruft)))
 
                             if len(selected) <= 20:
                                 output_logger.info("   all: %s", " ".join(x.uvname for x in selected))
@@ -1055,7 +1055,7 @@ class Britney(object):
                     if new_cruft:
                         output_logger.info(
                             "Change added new cruft items to list: %s",
-                            " ".join(x.uvname for x in new_cruft))
+                            " ".join(x.uvname for x in sorted(new_cruft)))
                         cruft.extend(new_cruft)
                     if cruft:
                         output_logger.info("Checking if changes enables cruft removal")
@@ -1171,7 +1171,7 @@ class Britney(object):
                     self.logger.error(" %s - unnoticed nuninst: %s", arch, str(false_negatives))
                 if false_positives:
                     self.logger.error(" %s - invalid nuninst: %s", arch, str(false_positives))
-                self.logger.info(" %s - actual nuninst: %s", arch, str(actual_nuninst))
+                self.logger.info(" %s - actual nuninst: %s", arch, str(sorted(actual_nuninst)))
                 self.logger.error("==================== NUNINST OUT OF SYNC =========================")
             if not only_on_break_archs:
                 raise AssertionError("NUNINST OUT OF SYNC")
