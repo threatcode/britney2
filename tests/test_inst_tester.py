@@ -520,28 +520,28 @@ class TestInstTester(unittest.TestCase):
             return node
 
         graph['A'] = _order_node(
-            before=['C', 'B'],
+            before=['C', 'L'],
             after=['A0'],
         )
-        graph['B'] = _order_node(
+        graph['L'] = _order_node(
             before=['F'],
             after=['A'],
         )
         graph['C'] = _order_node(
-            before=['E', 'D'],
+            before=['E', 'K'],
             after=['A'],
         )
-        graph['D'] = _order_node(
+        graph['K'] = _order_node(
             before=[],
             after=['C'],
         )
         graph['E'] = _order_node(
-            before=['B'],
+            before=['L'],
             after=['C']
         )
         graph['F'] = _order_node(
             before=[],
-            after=['B'],
+            after=['L'],
         )
         graph['A0'] = _order_node(
             before=['A0'],
@@ -553,8 +553,8 @@ class TestInstTester(unittest.TestCase):
         # visit order sensitive).
         expected = [
             ('F',),
-            ('B',),
-            ('D',),
+            ('L',),
+            ('K',),
             ('E',),
             ('C',),
             ('A',),
