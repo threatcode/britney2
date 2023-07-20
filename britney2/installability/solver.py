@@ -95,7 +95,7 @@ def compute_scc(graph):
         node_stack.append(n)
         while work_stack:
             node, stack_idx, orig_node_num, successors = work_stack[-1]
-            if successors and _handle_succ(node, low[node], successors):
+            if successors and _handle_succ(node, low[node], sorted(successors)):
                 # _handle_succ has pushed a new node on to work_stack
                 # and we need to "restart" the loop to handle that first
                 continue

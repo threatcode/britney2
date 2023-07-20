@@ -520,32 +520,32 @@ class TestInstTester(unittest.TestCase):
             return node
 
         graph['A'] = _order_node(
-            before=['C', 'L'],
-            after=['A0'],
+            before={'C', 'L'},
+            after={'A0'},
         )
         graph['L'] = _order_node(
-            before=['F'],
-            after=['A'],
+            before={'F'},
+            after={'A'},
         )
         graph['C'] = _order_node(
-            before=['E', 'K'],
-            after=['A'],
+            before={'E', 'K'},
+            after={'A'},
         )
         graph['K'] = _order_node(
-            before=[],
-            after=['C'],
+            before={},
+            after={'C'},
         )
         graph['E'] = _order_node(
-            before=['L'],
-            after=['C']
+            before={'L'},
+            after={'C'}
         )
         graph['F'] = _order_node(
-            before=[],
-            after=['L'],
+            before={},
+            after={'L'},
         )
         graph['A0'] = _order_node(
-            before=['A0'],
-            after=[],
+            before={'A0'},
+            after={},
         )
 
         # We also assert that the order is correct to ensure that
