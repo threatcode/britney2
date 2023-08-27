@@ -46,6 +46,7 @@ def initialize_policy(test_name, policy_class, **kwargs):
         architectures=ARCH,
         adt_swift_url='file://' + debci_data,
         adt_ci_url='',
+        build_url='',
         adt_success_bounty=3,
         adt_regression_penalty=False,
         adt_retry_url_mech='run_id',

@@ -518,6 +518,9 @@ class Britney(object):
         else:
             self.options.adt_ignore_failure_for_new_tests = True
 
+        if not hasattr(self.options, 'build_url'):
+            self.options.build_url = ''
+
         self._policy_engine.load_policies(self.options, self.suite_info, MIGRATION_POLICIES)
 
     @property

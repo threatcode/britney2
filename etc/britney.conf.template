@@ -126,6 +126,9 @@ ADT_SHARED_RESULTS_CACHE =
 ADT_SWIFT_URL     = file:///path/to/britney/state/debci.json
 # Base URL for autopkgtest site, used for links in the excuses
 ADT_CI_URL        = https://example.com/
+# Complete URL to find a specific build log, used for links in the excuses
+# Supported placeholders are: arch, suite, source (ie. source package), version
+BUILD_URL         = https://buildd.example.com/status/logs.php?suite=sid&arch={arch}&pkg={source}&ver={version}
 # Enable the huge queue for packages that trigger vast amounts of tests to not
 # starve the regular queue
 #ADT_HUGE          = 20
