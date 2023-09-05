@@ -82,6 +82,15 @@ source_suite=$(echo $(get_b2_conf_value UNSTABLE $b2_conf) | perl -pe 's|.*/dist
 # no_pipuparts && no_rcbugs)
 mkdir -p $(dirname $adt_swift_file) $(dirname $adt_output_file)
 
+# initialize some policy-specific files that need to exist
+state_dir=$(dirname $adt_swift_file)
+touch ${state_dir}/age-policy-dates
+touch ${state_dir}/age-policy-urgencies
+touch ${state_dir}/rc-bugs-testing
+touch ${state_dir}/rc-bugs-unstable
+touch ${state_dir}/piuparts-summary-testing.json
+touch ${state_dir}/piuparts-summary-unstable.json
+
 # fetch hints
 for hint in $RELEASE_HINTS ; do
   scripts/get-release-team-hint.sh $hint
@@ -95,7 +104,7 @@ if [ $DEBCI_BACKLOG_DAYS != 0 ] ; then
 fi
 
 # run britney2
-./britney.py -v --config $b2_conf --no-compute-migrations
+./britney.py -v --config $b2_conf --distribution kali 
 
 # schedule the new tests
 ./scripts/debci-put.py $DRY_RUN_MODE $DEBCI_PRIVATE_RUNS --debci-priority $DEBCI_PRIORITY --secret-headers-file $SECRET_HEADERS_FILE $source_suite $adt_output_file

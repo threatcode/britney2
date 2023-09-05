@@ -2,32 +2,24 @@
 
 set -e
 
+# The debci api key needs to be manually pre-generated on the debci instance
+# itself, using the following command (where "britney" is just an arbitrary
+# internal username that debci will associate to that key):
+#
+#   debci api setkey britney
+#
+# The key is then placed in the file .secret-headers, so that it's used
+# automatically by run-standalone.sh and other scripts.
+
+# About the arguments "-d <debci_backlog_days>" and "-p <debci_priority>": we
+# don't use the default values for those, we stick to Kali "historical config"
+# to make sure not to break anything, but really I don't know if that's
+# required.
+
 LOGFILE=kali-run-britney.log
 
 if [ -e "$LOGFILE" ]; then
     savelog -q -c 7 -l $LOGFILE
 fi
 
-KALI_PREPARE="yes"
-case "$*" in
-    *--no-prepare*)
-	KALI_PREPARE="no"
-	;;
-esac
-
-if [ "$KALI_PREPARE" = "yes" ]; then
-    ./kali-prepare-data.sh >$LOGFILE 2>&1
-else
-    : >$LOGFILE
-fi
-
-./britney.py --config kali.conf --distribution kali -v >>$LOGFILE 2>&1
-
-if [ "$KALI_PREPARE" = "yes" ]; then
-    # Push autopkgtest results to debci, reading DEBCI_API_KEY from a .env
-    # in the same directory (see comment in kali-prepare-data.sh for
-    # details about key generation)
-    . $(dirname $(readlink -f $0))/.env
-    export DEBCI_API_KEY
-    ./scripts/debci-put.py ./data/output/debci_*.input >> $LOGFILE 2>&1
-fi
+./run-standalone.sh -d 15 -p 10 kali.conf >$LOGFILE 2>&1
