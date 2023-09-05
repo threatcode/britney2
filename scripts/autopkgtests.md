@@ -16,7 +16,7 @@ The main entrypoint, run periodically via cron, is
 usage is as follows:
 
 ```
-Usage: ./run-standalone.sh [-n] [-b <debci_backlog_days>] [-s <secret_header_file>] [-r 'hint1 hint2 [...]'] <britney2_conf_file>
+Usage: ./run-standalone.sh [-n] [-d <debci_backlog_days>] [-s <secret_headers_file>] [-r 'hint1 hint2 [...]'] <britney2_conf_file>
   -d <debci_backlog_days>  : how many days worth of autopkgtest results to fetch (default: 7)
   -s <secret_headers_file> : this file must contain an 'Auth-Key: <debci_api_key>' line (default: ./.secret-headers )
   -p <debci_priority>      : use this priority when enqueuing jobs line (default: 5)
