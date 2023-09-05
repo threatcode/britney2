@@ -520,32 +520,32 @@ class TestInstTester(unittest.TestCase):
             return node
 
         graph['A'] = _order_node(
-            before=['C', 'B'],
-            after=['A0'],
+            before={'C', 'L'},
+            after={'A0'},
         )
-        graph['B'] = _order_node(
-            before=['F'],
-            after=['A'],
+        graph['L'] = _order_node(
+            before={'F'},
+            after={'A'},
         )
         graph['C'] = _order_node(
-            before=['E', 'D'],
-            after=['A'],
+            before={'E', 'K'},
+            after={'A'},
         )
-        graph['D'] = _order_node(
-            before=[],
-            after=['C'],
+        graph['K'] = _order_node(
+            before={},
+            after={'C'},
         )
         graph['E'] = _order_node(
-            before=['B'],
-            after=['C']
+            before={'L'},
+            after={'C'}
         )
         graph['F'] = _order_node(
-            before=[],
-            after=['B'],
+            before={},
+            after={'L'},
         )
         graph['A0'] = _order_node(
-            before=['A0'],
-            after=[],
+            before={'A0'},
+            after={},
         )
 
         # We also assert that the order is correct to ensure that
@@ -553,8 +553,8 @@ class TestInstTester(unittest.TestCase):
         # visit order sensitive).
         expected = [
             ('F',),
-            ('B',),
-            ('D',),
+            ('L',),
+            ('K',),
             ('E',),
             ('C',),
             ('A',),

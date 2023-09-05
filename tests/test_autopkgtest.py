@@ -664,6 +664,66 @@ class T(TestBase):
         # not expecting any failures to retrieve from swift
         self.assertNotIn('Failure', out, out)
 
+    def test_provides_based_api_triggers_combined(self):
+        '''Some binaries provide a virtual API via Provides. This typically
+        means that more packages need to be tested together.'''
+
+        self.data.add_default_packages()
+
+        self.data.add('provider',
+                      True,
+                      {'Source': 'provider-src',
+                       'Version': '3',
+                       'Provides': 'api-2',
+                       'Depends': 'libc6'},
+                      testsuite=None,
+                      add_src=True)
+        self.data.add('provider',
+                      False,
+                      {'Source': 'provider-src',
+                       'Version': '1',
+                       'Provides': 'api-1',
+                       'Depends': 'libc6'},
+                      testsuite=None,
+                      add_src=True)
+        self.data.add('depender',
+                      True,
+                      {'Source': 'depender-src',
+                       'Version': '2',
+                       'Depends': 'api-2'},
+                      testsuite='autopkgtest',
+                      add_src=True)
+        self.data.add('depender',
+                      False,
+                      {'Source': 'depender-src',
+                       'Version': '1',
+                       'Depends': 'api-1'},
+                      testsuite='autopkgtest',
+                      add_src=True)
+
+        # depender-src/1 has passed
+        self.swift.set_results({'autopkgtest-testing': {
+            'testing/i386/d/depender-src/20150101_100000@': (0, 'depender-src 1', tr('passedbefore/1')),
+            'testing/amd64/d/depender-src/20150101_100000@': (0, 'depender-src 1', tr('passedbefore/1')),
+            'testing/i386/d/depender-src/20150102_100000@': (0, 'depender-src 2', tr('depender-src/2 provider-src/2')),
+            'testing/amd64/d/depender-src/20150101_100000@': (0, 'depender-src 2', tr('depender-src/2 provider-src/2')),
+        }})
+
+        exc = self.run_it(
+            [],
+            {'depender-src': (False, {})},
+            {'provider-src': [('old-version', '1'),
+                              ('new-version', '3'),
+                              ]
+             })[1]
+        # autopkgtest should be triggered for depender in unstable
+        self.assertEqual(
+            {'provider-src/3': {'depender-src': ['amd64', 'i386']}},
+            self.pending_requests)
+        self.assertTrue(
+            'debci-testing-i386:depender-src {"triggers": ["provider-src/3 depender-src/2"]}'
+            in self.amqp_requests)
+
     def test_unbuilt(self):
         '''Unbuilt package should not trigger tests or get considered'''
 

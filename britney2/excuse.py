@@ -156,7 +156,6 @@ class Excuse(object):
         self._policy_verdict = PolicyVerdict.REJECTED_PERMANENTLY
 
         self.all_deps = []
-        self.break_deps = []
         self.unsatisfiable_on_archs = []
         self.unsat_deps = defaultdict(set)
         self.newbugs = set()
@@ -248,6 +247,13 @@ class Excuse(object):
         assert dep != frozenset(), "%s: Adding empty list of dependencies" % self.name
 
         deps = []
+        try:
+            # Casting to a sorted list makes excuses more
+            # deterministic, but fails if the list has more than one
+            # element *and* at least one DependencyState
+            dep = sorted(dep)
+        except TypeError:
+            pass
         for d in dep:
             if isinstance(d, DependencyState):
                 deps.append(d)
@@ -272,11 +278,6 @@ class Excuse(object):
                     deps.add(d.dep)
                     break
         return deps
-
-    def add_break_dep(self, name, arch):
-        """Add a break dependency"""
-        if (name, arch) not in self.break_deps:
-            self.break_deps.append((name, arch))
 
     def add_unsatisfiable_on_arch(self,  arch):
         """Add an arch that has unsatisfiable dependencies"""
@@ -377,12 +378,12 @@ class Excuse(object):
 
         dep_issues = defaultdict(set)
         for d in self.all_deps:
-            dep = d.first_dep
             info = ""
             if not d.possible:
                 desc = d.first_impossible_dep
                 info = "Impossible %s: %s -> %s" % (d.deptype, self.uvname, desc)
             else:
+                dep = d.first_dep
                 duv = excuses[dep].uvname
                 # Make sure we link to package names
                 duv_src = duv.split("/")[0]
@@ -482,16 +483,12 @@ class Excuse(object):
         if {d for d in self.all_deps if not d.valid and d.possible}:
             excusedata['invalidated-by-other-package'] = True
         if self.all_deps \
-                or self.break_deps or self.unsat_deps:
+                or self.unsat_deps:
             excusedata['dependencies'] = dep_data = {}
 
             migrate_after = set(d.first_dep for d in self.all_deps if d.valid)
             blocked_by = set(d.first_dep for d in self.all_deps
                              if not d.valid and d.possible)
-
-            break_deps = [x for x, _ in self.break_deps if
-                          x not in migrate_after and
-                          x not in blocked_by]
 
             def sorted_uvnames(deps):
                 return sorted(excuses[d].uvname for d in deps)
@@ -500,8 +497,6 @@ class Excuse(object):
                 dep_data['blocked-by'] = sorted_uvnames(blocked_by)
             if migrate_after:
                 dep_data['migrate-after'] = sorted_uvnames(migrate_after)
-            if break_deps:
-                dep_data['unimportant-dependencies'] = sorted_uvnames(break_deps)
             if self.unsat_deps:
                 dep_data['unsatisfiable-dependencies'] = {x: sorted(self.unsat_deps[x]) for x in self.unsat_deps}
         if self.needs_approval:

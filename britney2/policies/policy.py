@@ -4,6 +4,8 @@ import os
 import re
 import sys
 import time
+from typing import List, Optional, Callable, Any
+
 import yaml
 from enum import IntEnum, unique
 from collections import defaultdict
@@ -11,7 +13,7 @@ from urllib.parse import quote
 
 import apt_pkg
 
-from britney2 import SuiteClass, PackageId
+from britney2 import SuiteClass, PackageId, Suites
 from britney2.hints import Hint, split_into_one_hint_per_package
 from britney2.inputs.suiteloader import SuiteContentLoader
 from britney2.policies import PolicyVerdict, ApplySrcPolicy
@@ -20,12 +22,52 @@ from britney2 import DependencyType
 from britney2.excusedeps import DependencySpec
 
 
+class PolicyLoadRequest:
+    __slots__ = ('_options_name', '_default_value', '_policy_constructor')
+
+    def __init__(self,
+                 policy_constructor: Callable[[Any, Suites], 'BasePolicy'],
+                 options_name: Optional[str],
+                 default_value: bool):
+        self._policy_constructor = policy_constructor
+        self._options_name = options_name
+        self._default_value = default_value
+
+    def is_enabled(self, options) -> bool:
+        if self._options_name is None:
+            assert self._default_value
+            return True
+        actual_value = getattr(options, self._options_name, None)
+        if actual_value is None:
+            return self._default_value
+        return actual_value.lower() in ('yes', 'y', 'true', 't')
+
+    def load(self, options: Any, suite_info: Suites) -> 'BasePolicy':
+        return self._policy_constructor(options, suite_info)
+
+    @classmethod
+    def always_load(cls, policy_constructor: Callable[[Any, Suites], 'BasePolicy']) -> 'PolicyLoadRequest':
+        return cls(policy_constructor, None, True)
+
+    @classmethod
+    def conditionally_load(cls,
+                           policy_constructor: Callable[[Any, Suites], 'BasePolicy'],
+                           option_name: str,
+                           default_value: bool) -> 'PolicyLoadRequest':
+        return cls(policy_constructor, option_name, default_value)
+
+
 class PolicyEngine(object):
     def __init__(self):
         self._policies = []
 
     def add_policy(self, policy):
         self._policies.append(policy)
+
+    def load_policies(self, options, suite_info: Suites, policy_load_requests: List[PolicyLoadRequest]) -> None:
+        for policy_load_request in policy_load_requests:
+            if policy_load_request.is_enabled(options):
+                self.add_policy(policy_load_request.load(options, suite_info))
 
     def register_policy_hints(self, hint_parser):
         for policy in self._policies:
@@ -166,7 +208,7 @@ class BasePolicy(object):
         Britney will call this method on binaries from a given source package
         on a given architecture, when Britney is considering to migrate them
         from the given source suite to the target suite.  The policy will then
-        evaluate the the migration and then return a verdict.
+        evaluate the migration and then return a verdict.
 
         :param policy_info A dictionary of all policy results.  The
         policy can add a value stored in a key related to its name.
@@ -265,9 +307,9 @@ class AgePolicy(BasePolicy):
 
     """
 
-    def __init__(self, options, suite_info, mindays):
+    def __init__(self, options, suite_info):
         super().__init__('age', options, suite_info, {SuiteClass.PRIMARY_SOURCE_SUITE})
-        self._min_days = mindays
+        self._min_days = self._generate_mindays_table()
         self._min_days_default = None  # initialised later
         # britney's "day" begins at 7pm (we want aging to occur in the 22:00Z run and we run Britney 2-4 times a day)
         # NB: _date_now is used in tests
@@ -284,6 +326,21 @@ class AgePolicy(BasePolicy):
         if hasattr(self.options, 'no_penalties'):
             self._penalty_immune_urgencies = frozenset(x.strip() for x in self.options.no_penalties.split())
         self._bounty_min_age = None  # initialised later
+
+    def _generate_mindays_table(self):
+        mindays = {}
+        for k in dir(self.options):
+            if not k.startswith('mindays_'):
+                continue
+            v = getattr(self.options, k)
+            try:
+                as_days = int(v)
+            except ValueError:
+                raise ValueError("Unable to parse " + k + " as a number of days. Must be 0 or a positive integer")
+            if as_days < 0:
+                raise ValueError("The value of " + k + " must be zero or a positive integer")
+            mindays[k.split("_")[1]] = as_days
+        return mindays
 
     def register_hints(self, hint_parser):
         hint_parser.register_hint_type('age-days', simple_policy_hint_parser_function(AgeDayHint, int), min_args=2)
@@ -1673,7 +1730,7 @@ class ImplicitDependencyPolicy(BasePolicy):
                     action = "removing %s from %s" % (
                         pkg_id_t.name,
                         self.suite_info.target_suite.name)
-                info = "%s makes %s uninstallable" % (
+                info = '{0} makes <a href="#{1}">{1}</a> uninstallable'.format(
                     action, rdep_pkg.name)
                 verdict = PolicyVerdict.REJECTED_PERMANENTLY
                 excuse.add_verdict_info(verdict, info)

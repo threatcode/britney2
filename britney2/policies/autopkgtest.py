@@ -62,7 +62,7 @@ EXCUSES_LABELS = {
     "OLD_NEUTRAL": '<span style="background:#e5c545">No test results</span>',
     "FAIL": '<span style="background:#ff6666">Failed</span>',
     "OLD_FAIL": '<span style="background:#ff6666">Failed</span>',
-    "ALWAYSFAIL": '<span style="background:#e5c545">Not a regression</span>',
+    "ALWAYSFAIL": '<span style="background:#e5c545">Failed (not a regression)</span>',
     "REGRESSION": '<span style="background:#ff6666">Regression</span>',
     "IGNORE-FAIL": '<span style="background:#e5c545">Ignored failure</span>',
     "RUNNING": '<span style="background:#99ddff">Test in progress</span>',
@@ -446,7 +446,7 @@ class AutopkgtestPolicy(BasePolicy):
                         history_url = cloud_url % {
                             'h': srchash(testsrc), 's': testsrc,
                             'r': self.options.series, 'a': arch}
-                    if status == 'REGRESSION':
+                    if status in ('REGRESSION', 'NEUTRAL'):
                         if self.options.adt_retry_url_mech == 'run_id':
                             retry_url = self.options.adt_ci_url + 'api/v1/retry/' + run_id
                         else:
@@ -578,6 +578,18 @@ class AutopkgtestPolicy(BasePolicy):
         # Here we figure out what is required from the source suite
         # for the test to install successfully.
         #
+        # The ImplicitDependencyPolicy does a similar calculation, but
+        # if I (elbrus) understand correctly, only in the reverse
+        # dependency direction. We are doing something similar here
+        # but in the dependency direction (note: this code is older).
+        # We use the ImplicitDependencyPolicy result for the reverse
+        # dependencies and we keep the code below for the
+        # dependencies. Using the ImplicitDependencyPolicy results
+        # also in the reverse direction seems to require quite some
+        # reorganisation to get that information available here, as in
+        # the current state only the current excuse is available here
+        # and the required other excuses may not be calculated yet.
+        #
         # Loop over all binary packages from trigger and
         # recursively look up which *versioned* dependencies are
         # only satisfied in the source suite.
@@ -641,6 +653,12 @@ class AutopkgtestPolicy(BasePolicy):
             # change it to the version in the source suite
             bin_broken.update(broken_filtered)
         bin_triggers.update(bin_broken)
+
+        # The ImplicitDependencyPolicy also found packages that need
+        # to migrate together, so add them to the triggers too.
+        for bin_implicit in excuse.depends_packages_flattened:
+            if bin_implicit.architecture == arch:
+                bin_triggers.add(bin_implicit)
 
         triggers = set()
         for binary in bin_triggers:
@@ -726,6 +744,9 @@ class AutopkgtestPolicy(BasePolicy):
                         extra_bins.append(binaries_info['dkms'].pkg_id)
                     except KeyError:
                         pass
+
+        if not self.has_built_on_this_arch_or_is_arch_all(srcinfo, arch):
+            return []
 
         pkg_universe = self.britney.pkg_universe
         # plus all direct reverse dependencies and test triggers of its
@@ -1233,3 +1254,27 @@ class AutopkgtestPolicy(BasePolicy):
                     return True
 
         return False
+
+    def has_built_on_this_arch_or_is_arch_all(self, src_data, arch):
+        '''When a source builds arch:all binaries, those binaries are
+           added to all architectures and thus the source 'exists'
+           everywhere. This function checks if the source has any arch
+           specific binaries on this architecture and if not, if it
+           has them on any architecture.
+        '''
+        packages_s_a = self.suite_info.primary_source_suite.binaries[arch]
+        has_unknown_binary = False
+        for binary_s in src_data.binaries:
+            try:
+                binary_u = packages_s_a[binary_s.package_name]
+            except KeyError:
+                # src_data.binaries has all the built binaries, so if
+                # we get here, we know that at least one architecture
+                # has architecture specific binaries
+                has_unknown_binary = True
+                continue
+            if binary_u.architecture == arch:
+                return True
+        # If we get here, we have only seen arch:all packages for this
+        # arch.
+        return not has_unknown_binary

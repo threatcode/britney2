@@ -379,6 +379,9 @@ class MigrationManager(object):
         return (affected_all, smooth_updates)
 
     def _apply_multiple_items_to_target_suite(self, items):
+        """
+        :param items: list of MigrationItems
+        """
         is_source_migration = False
         if len(items) == 1:
             item = items[0]
@@ -435,7 +438,7 @@ class MigrationManager(object):
         must_be_installable = self.constraints['keep-installable']
 
         # check the affected packages on all the architectures
-        for arch in affected_architectures:
+        for arch in sorted(affected_architectures):
             check_archall = arch in nobreakall_arches
 
             check_installability(target_suite, packages_t, arch, affected_all,

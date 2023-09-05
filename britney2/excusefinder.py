@@ -25,6 +25,17 @@ class ExcuseFinder(object):
         self.hints = hints
         self.excuses = {}
 
+    def _get_build_link(self, arch, src, ver, label=None):
+        """Return a link to the build logs, labelled 'arch' per default"""
+        if label is None:
+            label = arch
+        if self.options.build_url:
+            url = self.options.build_url.format(
+                arch=arch, source=quote(src), version=quote(ver))
+            return "<a href=\"%s\" target=\"_blank\">%s</a>" % (url, label)
+        else:
+            return label
+
     def _should_remove_source(self, item):
         """Check if a source package should be removed from testing
 
@@ -366,17 +377,16 @@ class ExcuseFinder(object):
                 for v in sorted(oodbins):
                     if oodtxt:
                         oodtxt = oodtxt + "; "
-                    oodtxt = oodtxt + "%s (from <a href=\"https://buildd.debian.org/status/logs.php?" \
-                                      "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>)" % \
-                                      (", ".join(sorted(oodbins[v])), quote(arch), quote(src), quote(v), v)
+                    oodtxt = oodtxt + "%s (from %s)" % \
+                                      (", ".join(sorted(oodbins[v])),
+                                       self._get_build_link(arch, src, v, label=v))
+
                 if uptodatebins:
-                    text = "old binaries left on <a href=\"https://buildd.debian.org/status/logs.php?" \
-                           "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>: %s" % \
-                           (quote(arch), quote(src), quote(source_u.version), arch, oodtxt)
+                    text = "old binaries left on %s: %s" % \
+                           (self._get_build_link(arch, src, source_u.version), oodtxt)
                 else:
-                    text = "missing build on <a href=\"https://buildd.debian.org/status/logs.php?" \
-                           "arch=%s&pkg=%s&ver=%s\" target=\"_blank\">%s</a>" % \
-                           (quote(arch), quote(src), quote(source_u.version), arch)
+                    text = "missing build on %s" % \
+                           (self._get_build_link(arch, src, source_u.version))
 
                 if arch in self.options.outofsync_arches:
                     text = text + " (but %s isn't keeping up, so nevermind)" % (arch)
@@ -429,11 +439,8 @@ class ExcuseFinder(object):
                     base = 'stable'
                 else:
                     base = target_suite.name
-                text = "Not yet built on "\
-                    "<a href=\"https://buildd.debian.org/status/logs.php?"\
-                    "arch=%s&pkg=%s&ver=%s&suite=%s\" target=\"_blank\">%s</a> "\
-                    "(relative to target suite)" % \
-                    (quote(arch), quote(src), quote(source_u.version), base, arch)
+                text = "Not yet built on %s (relative to target suite)" % \
+                       (self._get_build_link(arch, src, source_u.version))
 
                 if arch in self.options.outofsync_arches:
                     text = text + " (but %s isn't keeping up, so never mind)" % (arch)

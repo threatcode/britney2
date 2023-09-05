@@ -210,6 +210,7 @@ from britney2.policies.policy import (AgePolicy,
                                       BuiltUsingPolicy,
                                       BuiltOnBuilddPolicy,
                                       ImplicitDependencyPolicy,
+                                      PolicyLoadRequest,
                                       )
 from britney2.policies.autopkgtest import AutopkgtestPolicy
 from britney2.utils import (log_and_format_old_libraries,
@@ -223,6 +224,21 @@ from britney2.utils import (log_and_format_old_libraries,
 
 __author__ = 'Fabio Tranchitella and the Debian Release Team'
 __version__ = '2.0'
+
+
+MIGRATION_POLICIES = [
+    PolicyLoadRequest.always_load(DependsPolicy),
+    PolicyLoadRequest.conditionally_load(RCBugPolicy, 'rcbug_enable', True),
+    PolicyLoadRequest.conditionally_load(PiupartsPolicy, 'piuparts_enable', True),
+    PolicyLoadRequest.always_load(ImplicitDependencyPolicy),
+    PolicyLoadRequest.conditionally_load(AutopkgtestPolicy, 'adt_enable', True),
+    PolicyLoadRequest.conditionally_load(AgePolicy, 'age_enable', True),
+    # Disable for Kali, it's more trouble than worth it
+    # PolicyLoadRequest.always_load(BuildDependsPolicy),
+    PolicyLoadRequest.always_load(BlockPolicy),
+    PolicyLoadRequest.conditionally_load(BuiltUsingPolicy, 'built_using_policy_enable', True),
+    PolicyLoadRequest.conditionally_load(BuiltOnBuilddPolicy, 'check_buildd', False),
+]
 
 
 class Britney(object):
@@ -441,10 +457,6 @@ class Britney(object):
             self.logger.error("Unable to read the configuration file (%s), exiting!", self.options.config)
             sys.exit(1)
 
-        # minimum days for unstable-testing transition and the list of hints
-        # are handled as an ad-hoc case
-        MINDAYS = {}
-
         self.HINTS = {'command-line': self.HINTS_ALL}
         with open(self.options.config, encoding='utf-8') as config:
             for line in config:
@@ -452,9 +464,7 @@ class Britney(object):
                     k, v = line.split('=', 1)
                     k = k.strip()
                     v = v.strip()
-                    if k.startswith("MINDAYS_"):
-                        MINDAYS[k.split("_")[1].lower()] = int(v)
-                    elif k.startswith("HINTS_"):
+                    if k.startswith("HINTS_"):
                         self.HINTS[k.split("_")[1].lower()] = \
                             reduce(lambda x, y: x+y, [
                                 hasattr(self, "HINTS_" + i) and
@@ -509,23 +519,10 @@ class Britney(object):
         else:
             self.options.adt_ignore_failure_for_new_tests = True
 
-        self._policy_engine.add_policy(DependsPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'rcbug_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(RCBugPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'piuparts_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(PiupartsPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'adt_enable') == 'yes':
-            self._policy_engine.add_policy(AutopkgtestPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'age_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(AgePolicy(self.options, self.suite_info, MINDAYS))
-        # Disable for Kali, it's more trouble than worth it
-        # self._policy_engine.add_policy(BuildDependsPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(BlockPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'built_using_policy_enable', 'yes') == 'yes':
-            self._policy_engine.add_policy(BuiltUsingPolicy(self.options, self.suite_info))
-        self._policy_engine.add_policy(ImplicitDependencyPolicy(self.options, self.suite_info))
-        if getattr(self.options, 'check_buildd', 'no') == 'yes':
-            self._policy_engine.add_policy(BuiltOnBuilddPolicy(self.options, self.suite_info))
+        if not hasattr(self.options, 'build_url'):
+            self.options.build_url = ''
+
+        self._policy_engine.load_policies(self.options, self.suite_info, MIGRATION_POLICIES)
 
     @property
     def hints(self):
@@ -860,6 +857,10 @@ class Britney(object):
         counters for every action performed. If the action does not improve them, it is reverted.
         The method returns the new uninstallability counters and the remaining actions if the
         final result is successful, otherwise (None, []).
+
+        :param packages: list of MigrationItem
+        :param selected: list of MigrationItem?
+        :param nuninst: dict with sets ? of ? per architecture
         """
         group_info = {}
         rescheduled_packages = packages
@@ -872,7 +873,7 @@ class Britney(object):
         for y in sorted((y for y in packages), key=attrgetter('uvname')):
             try:
                 _, updates, rms, _ = mm.compute_groups(y)
-                result = (y, frozenset(updates), frozenset(rms))
+                result = (y, sorted(updates), sorted(rms))
                 group_info[y] = result
             except MigrationConstraintException as e:
                 rescheduled_packages.remove(y)
@@ -888,7 +889,7 @@ class Britney(object):
 
         output_logger.info("recur: [] %s %d/0", ",".join(x.uvname for x in selected), len(packages))
         while rescheduled_packages:
-            groups = {group_info[x] for x in rescheduled_packages}
+            groups = [group_info[x] for x in rescheduled_packages]
             worklist = solver.solve_groups(groups)
             rescheduled_packages = []
 
@@ -915,7 +916,7 @@ class Britney(object):
                             if new_cruft:
                                 output_logger.info(
                                     "   added new cruft items to list: %s",
-                                    " ".join(x.uvname for x in new_cruft))
+                                    " ".join(x.uvname for x in sorted(new_cruft)))
 
                             if len(selected) <= 20:
                                 output_logger.info("   all: %s", " ".join(x.uvname for x in selected))
@@ -929,7 +930,7 @@ class Britney(object):
                             for cruft_item in new_cruft:
                                 try:
                                     _, updates, rms, _ = mm.compute_groups(cruft_item)
-                                    result = (cruft_item, frozenset(updates), frozenset(rms))
+                                    result = (cruft_item, sorted(updates), sorted(rms))
                                     group_info[cruft_item] = result
                                     worklist.append([cruft_item])
                                 except MigrationConstraintException as e:
@@ -1058,7 +1059,7 @@ class Britney(object):
                     if new_cruft:
                         output_logger.info(
                             "Change added new cruft items to list: %s",
-                            " ".join(x.uvname for x in new_cruft))
+                            " ".join(x.uvname for x in sorted(new_cruft)))
                         cruft.extend(new_cruft)
                     if cruft:
                         output_logger.info("Checking if changes enables cruft removal")
@@ -1174,7 +1175,7 @@ class Britney(object):
                     self.logger.error(" %s - unnoticed nuninst: %s", arch, str(false_negatives))
                 if false_positives:
                     self.logger.error(" %s - invalid nuninst: %s", arch, str(false_positives))
-                self.logger.info(" %s - actual nuninst: %s", arch, str(actual_nuninst))
+                self.logger.info(" %s - actual nuninst: %s", arch, str(sorted(actual_nuninst)))
                 self.logger.error("==================== NUNINST OUT OF SYNC =========================")
             if not only_on_break_archs:
                 raise AssertionError("NUNINST OUT OF SYNC")
@@ -1460,33 +1461,13 @@ class Britney(object):
             for dep in deps:
                 excuses_rdeps[dep].add(name)
 
-        def find_related(e, hint, circular_first=False):
-            excuse = excuses[e]
-            if not circular_first:
-                hint.add(excuse.item)
-            if not excuse.get_deps():
-                return hint
-            for p in excuses_deps[e]:
-                if p in hint or p not in valid_excuses:
-                    continue
-                if not find_related(p, hint):
-                    return False
-            return hint
-
         # loop on them
         candidates = []
         mincands = []
         seen_hints = set()
         for e in valid_excuses:
             excuse = excuses[e]
-            if excuse.get_deps():
-                hint = find_related(e, set(), True)
-                if isinstance(hint, dict) and e in hint:
-                    h = frozenset(hint)
-                    if h not in seen_hints:
-                        candidates.append(h)
-                        seen_hints.add(h)
-            else:
+            if not excuse.get_deps():
                 items = [excuse.item]
                 orig_size = 1
                 looped = False
@@ -1515,7 +1496,6 @@ class Britney(object):
         return [candidates, mincands]
 
     def run_auto_hinter(self):
-        mi_factory = self._migration_item_factory
         for lst in self.get_auto_hinter_hints(self.upgrade_me):
             for hint in lst:
                 self.do_hint("easy", "autohinter", sorted(hint))
