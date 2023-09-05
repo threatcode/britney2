@@ -12,7 +12,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [-n] [-b <debci_backlog_days>] [-s <secret_header_file>] [-p <debci_priority>] [-r 'hint1 hint2 [...]'] <britney2_conf_file>"
+  echo "Usage: $0 [-n] [-d <debci_backlog_days>] [-s <secret_headers_file>] [-p <debci_priority>] [-r 'hint1 hint2 [...]'] <britney2_conf_file>"
   echo "  -d <debci_backlog_days>  : how many days worth of autopkgtest results to fetch (default: 7); if 0, skip fetching results altogether"
   echo "  -s <secret_headers_file> : this file must contain at least a 'Auth-Key: <debci_api_key>' line (default: ./.secret-headers )"
   echo "  -p <debci_priority>      : use this priority when enqueuing jobs line (default: 5)"
@@ -79,7 +79,7 @@ adt_ci_url=$(get_b2_conf_value ADT_CI_URL $b2_conf)
 source_suite=$(echo $(get_b2_conf_value UNSTABLE $b2_conf) | perl -pe 's|.*/dists/||')
 
 # create the 2 directories needed by britney2 (when no_age &&
-# no_pipuparts && no_rcbugs)
+# no_piuparts && no_rcbugs)
 mkdir -p $(dirname $adt_swift_file) $(dirname $adt_output_file)
 
 # fetch hints

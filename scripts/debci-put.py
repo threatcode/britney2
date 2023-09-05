@@ -148,7 +148,7 @@ parser.add_argument('--secret-headers-file',
                     action='store',
                     required=False,
                     default=SECRET_HEADERS_FILE,
-                    metavar='DEBCI_MAX_REQUESTS')
+                    metavar='SECRET_HEADERS_FILE')
 parser.add_argument('source_suite')
 parser.add_argument('debci_input_file',
                     nargs='+')
