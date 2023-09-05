@@ -12,9 +12,6 @@ import sys
 from lib.common import get_secret_headers, SECRET_HEADERS_FILE
 
 
-# constants
-ARCH_RE = re.compile(r'.*/debci_submit_(?P<arch>[^.]+)\.json')
-
 # example: debci-testing-i386:green {"triggers": ["green/2" "other/n"]}
 DEBCI_RE = re.compile(r'^(?:[^-]+)-(?P<suite>.+)-(?P<arch>[^-]+):(?P<pkg>[^\s]+) .*triggers": \["(?P<triggers>.+)"\]')
 
