@@ -98,4 +98,4 @@ fi
 ./britney.py -v --config $b2_conf --no-compute-migrations
 
 # schedule the new tests
-./scripts/debci-put.py $DRY_RUN_MODE $DEBCI_PRIVATE_RUNS --debci-priority $DEBCI_PRIORITY --secret-headers-file $SECRET_HEADERS_FILE $source_suite $adt_output_file
+./scripts/debci-put.py $DRY_RUN_MODE $DEBCI_PRIVATE_RUNS --debci-priority $DEBCI_PRIORITY --debci-url $adt_ci_url --secret-headers-file $SECRET_HEADERS_FILE $source_suite $adt_output_file
