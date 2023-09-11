@@ -4,6 +4,7 @@
 
 .cache
 .idea
+.secret-headers
 _build
 
 /lib/aptvercmp
