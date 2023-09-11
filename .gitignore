@@ -14,5 +14,3 @@ _build
 
 data
 kali-run-britney.log*
-
-.env
